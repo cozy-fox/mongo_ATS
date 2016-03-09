@@ -1,0 +1,61 @@
+diff --git a/build_tools/menuselect-deps.in b/build_tools/menuselect-deps.in
+index a77530b..71514a2 100644
+--- a/build_tools/menuselect-deps.in
++++ b/build_tools/menuselect-deps.in
+@@ -4,6 +4,7 @@ COROSYNC=@PBX_COROSYNC@
+ CRYPTO=@PBX_CRYPTO@
+ BFD=@PBX_BFD@
+ BISON=@PBX_BISON@
++BSON=@PBX_BSON@
+ CURL=@PBX_CURL@
+ DAHDI=@PBX_DAHDI@
+ DLADDR=@PBX_DLADDR@
+@@ -33,6 +34,7 @@ LIBXML2=@PBX_LIBXML2@
+ LTDL=@PBX_LTDL@
+ LUA=@PBX_LUA@
+ MISDN=@PBX_MISDN@
++MONGOC=@PBX_MONGOC@
+ MYSQLCLIENT=@PBX_MYSQLCLIENT@
+ NBS=@PBX_NBS@
+ NETSNMP=@PBX_NETSNMP@
+diff --git a/configure.ac b/configure.ac
+index 3292809..cdb42d5 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -512,6 +512,8 @@ AST_EXT_LIB_SETUP([TIMERFD], [timerfd], [timerfd])
+ AST_EXT_LIB_SETUP([TINFO], [Term Info], [tinfo])
+ AST_EXT_LIB_SETUP([TONEZONE], [tonezone], [tonezone])
+ AST_EXT_LIB_SETUP([UNIXODBC], [unixODBC], [unixodbc])
++AST_EXT_LIB_SETUP([BSON], [bson-1.0], [bson-1.0])
++AST_EXT_LIB_SETUP([MONGOC], [mongoc-1.0], [mongoc-1.0])
+ AST_EXT_LIB_SETUP([VORBIS], [Vorbis], [vorbis])
+ AST_EXT_LIB_SETUP([VPB], [Voicetronix API], [vpb])
+ AST_EXT_LIB_SETUP([X11], [X11], [x11])
+@@ -2002,6 +2004,10 @@ AST_EXT_LIB_CHECK([NEWT], [newt], [newtBell], [newt.h])
+ 
+ AST_EXT_LIB_CHECK([UNIXODBC], [odbc], [SQLConnect], [sql.h], [])
+ 
++AST_EXT_LIB_CHECK([BSON], [bson-1.0], [bson_init], [libbson-1.0/bson.h], [], [-I/usr/local/include/libbson-1.0])
++
++AST_EXT_LIB_CHECK([MONGOC], [mongoc-1.0], [mongoc_init], [libmongoc-1.0/mongoc.h], [], [-I/usr/local/include/libbson-1.0])
++
+ AST_EXT_LIB_CHECK([OGG], [ogg], [ogg_sync_init], [])
+ 
+ # Non-glibc platforms require libexecinfo for backtrace support
+diff --git a/makeopts.in b/makeopts.in
+index 4922c2f..60211f3 100644
+--- a/makeopts.in
++++ b/makeopts.in
+@@ -303,6 +303,12 @@ TONEZONE_LIB=@TONEZONE_LIB@
+ UNIXODBC_INCLUDE=@UNIXODBC_INCLUDE@
+ UNIXODBC_LIB=@UNIXODBC_LIB@
+ 
++BSON_INCLUDE=@BSON_INCLUDE@
++BSON_LIB=@BSON_LIB@
++
++MONGOC_INCLUDE=@MONGOC_INCLUDE@
++MONGOC_LIB=@MONGOC_LIB@
++
+ UUID_INCLUDE=@UUID_INCLUDE@
+ UUID_LIB=@UUID_LIB@
+ 

@@ -1,0 +1,36 @@
+#
+# VM for Mongodb server
+#
+# Copyright: (C) 2016 KINOSHITA minoru
+# License: The MIT License (MIT)
+#
+
+Vagrant.configure(2) do |config|
+  #
+  # Versions to install
+  #
+  mongodb = '3.2'
+
+  #
+  # Hostname of VM
+  #
+  hostname = Dir.pwd.split('/').last
+
+  #
+  # Configuration of VM
+  #
+  config.vm.box = "parallels/ubuntu-14.04"
+  config.vm.hostname = hostname
+  config.vm.provider "parallels" do |prl|
+    prl.memory = 1024
+    prl.cpus = 1
+  end
+
+  #
+  # Provision MongoDB server
+  #
+  config.vm.provision "shell" do |s|
+    s.inline = "sudo -u vagrant sh /vagrant/provision.sh $@"
+    s.args   = [mongodb]
+  end
+end

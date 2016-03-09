@@ -1,0 +1,124 @@
+//
+//  Sample test data for asterisk-mongodb
+//
+//  You can load this test data as follows;
+//  $ mongo < testdata.script
+//
+
+use asterisk;
+
+var TRANSPORT = "transport-ws";
+
+//
+//  Definition for static configuration
+//
+var static_config = {
+    "extensions": {
+        "general": {
+            "static": "yes",
+            "writeprotect": "yes",
+            "clearglobalvars": "no"
+        },
+        "context1": {
+            "exten": [
+                "_6.,1,NoOp(Calling ${EXTEN}@context1)",
+                "_6.,n,Dial(PJSIP/${EXTEN})",
+            ],
+        },
+    },
+};
+
+//
+//  realtime resource for pjsip
+//  See https://wiki.asterisk.org/wiki/display/AST/Setting+up+PJSIP+Realtime as well.
+//
+var ps_aors = [
+    {_id:"6001", max_contacts:10},
+    {_id:"6002", max_contacts:10},
+    {_id:"6003", max_contacts:10},
+];
+
+var ps_auths = [
+    {_id:"6001", auth_type:"userpass", password:"6001", username: "6001"},
+    {_id:"6002", auth_type:"userpass", password:"6002", username: "6002"},
+    {_id:"6003", auth_type:"userpass", password:"6003", username: "6003"},
+];
+
+var ps_endpoints = [
+    {_id:"6001", transport:TRANSPORT, aors:"6001", auth:"6001", context:"context1", disallow:"all", allow:"ulaw", direct_media:"no"},
+    {_id:"6002", transport:TRANSPORT, aors:"6002", auth:"6002", context:"context1", disallow:"all", allow:"ulaw", direct_media:"no"},
+    {_id:"6003", transport:TRANSPORT, aors:"6003", auth:"6003", context:"context1", disallow:"all", allow:"ulaw", direct_media:"no"},
+];
+
+//
+//  load configuration as static resources
+//
+//  @param config is record set to be loaded 
+//  @param collection is name of collection to load the records
+//
+var write_config = function(config, collection) {
+    var cat_metric = 1;
+    for (var fname in config) {
+        var file = config[fname];
+        for (var cname in file) {
+            var category = file[cname];
+            for (var var_name in category) {
+                var var_val = category[var_name];
+                if (var_val instanceof Array) {
+                    var var_metric = 0;
+                    for (var i in var_val) {
+                        var data = {
+                            cat_metric: cat_metric,
+                            var_metric: var_metric++,
+                            commented: 0,
+                            filename: fname + ".conf",
+                            category: cname,
+                            var_name: var_name,
+                            var_val: var_val[i],
+                        };
+                        db[collection].insert(data);
+                    }
+                }
+                else {
+                    var data = {
+                        cat_metric: cat_metric,
+                        var_metric: 0,
+                        commented: 0,
+                        filename: fname + ".conf",
+                        category: cname,
+                        var_name: var_name,
+                        var_val: var_val,
+                    };
+                    db[collection].insert(data);
+                }
+                cat_metric++;
+            }
+        }
+    }
+}
+
+//
+//  load static resources
+//
+db.ast_config.drop();
+write_config(static_config, "ast_config");
+
+//
+//  load realtime resource for pjsip
+//
+db.ps_aors.drop();
+db.ps_aors.insert(ps_aors);
+
+db.ps_auths.drop();
+db.ps_auths.insert(ps_auths);
+
+db.ps_endpoints.drop();
+db.ps_endpoints.insert(ps_endpoints);
+
+//
+//  Verify
+//
+db.ast_config.find();
+db.ps_aors.find();
+db.ps_auths.find();
+db.ps_endpoints.find();

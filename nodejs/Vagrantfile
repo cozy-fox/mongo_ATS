@@ -1,0 +1,29 @@
+#
+# VM for applications to test with Nodejs
+#
+# Copyright: (C) 2016 KINOSHITA minoru
+# License: The MIT License (MIT)
+#
+
+Vagrant.configure(2) do |config|
+  #
+  # Hostname of VM
+  #
+  hostname = Dir.pwd.split('/').last
+
+  #
+  # Configuration of VM
+  #
+  config.vm.box = "parallels/ubuntu-14.04"
+  config.vm.hostname = hostname
+  config.vm.network "public_network"
+  config.vm.provider "parallels" do |prl|
+    prl.memory = 1024
+    prl.cpus = 1
+  end
+
+  #
+  # Provision applications to test
+  #
+  config.vm.provision "shell", path: "provision.sh"
+end
