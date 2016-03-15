@@ -2,7 +2,7 @@
 #
 # Provision MongoDB Backend Service
 #
-# Usage:  bootstrap.sh $1
+# Usage:  provision.sh $1
 # Where:
 #       $1 = version of MongoDB server
 #
@@ -38,3 +38,9 @@ mongo < /vagrant/mongodb/testdata.script
 sudo sed -i.bak -e s/127.0.0.1/0.0.0.0/g /etc/mongod.conf 
 # restart mongod
 sudo service mongod restart
+
+#
+#   end of provisioning
+#
+echo "==================================="
+echo "`mongo --version` installed"

@@ -145,3 +145,10 @@ sudo ln -s /vagrant/configs/pjsip.conf
 #
 #
 sudo service asterisk start
+
+#
+#   end of provisioning
+#
+echo "==================================="
+echo "`asterisk -V` installed"
+echo "`mongo --version` installed"

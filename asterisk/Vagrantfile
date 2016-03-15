@@ -5,14 +5,23 @@
 # License: The MIT License (MIT)
 #
 
+require 'json'
+
+#
+# Read common configuration
+#
+ast_mongo_config = open("../config.json") do |io|
+  JSON.load(io)
+end
+
 Vagrant.configure(2) do |config|
   #
   # Versions to build
   #
-  mongodb = '3.2'
-  mongo_c_driver = '1.3.3'
-  pjsip = '2.4.5'
-  asterisk = '13.7.2'
+  mongodb  = ast_mongo_config['mongodb']
+  mongo_c_driver = ast_mongo_config['mongo_c_driver']
+  pjsip    = ast_mongo_config['pjsip']
+  asterisk = ast_mongo_config['asterisk']
 
   #
   # Hostname of VM

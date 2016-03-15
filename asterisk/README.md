@@ -53,7 +53,7 @@ and the development environment as well.
 
 ## Vagrantfile
 
-The following property can be configurable;
+The following properties can be configurable with a common file [`config.json`](../config.json);
 
 | Property            |Definition           | Defined |
 |---------------------|---------------------|---------|

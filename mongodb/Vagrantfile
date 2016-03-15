@@ -5,11 +5,20 @@
 # License: The MIT License (MIT)
 #
 
+require 'json'
+
+#
+# Read common configuration
+#
+ast_mongo_config = open("../config.json") do |io|
+  JSON.load(io)
+end
+
 Vagrant.configure(2) do |config|
   #
   # Versions to install
   #
-  mongodb = '3.2'
+  mongodb = ast_mongo_config['mongodb']
 
   #
   # Hostname of VM

@@ -27,7 +27,7 @@ although it is loaded automatically while the VM has been launched up at first t
 
 ## Vagrantfile
 
-The following property can be configurable;
+The following property can be configurable with a common file [`config.json`](../config.json);
 
 | Property  | Definition           | Defined |
 |-----------|----------------------|---------|

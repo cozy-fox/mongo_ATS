@@ -87,6 +87,14 @@ vagrant@nodejs:~/nodejs/res_config_mongodb$
 }
 ```
 
+## Vagrantfile
+
+The following property can be configurable with a common file [`config.json`](../config.json);
+
+| Property  | Definition           | Defined |
+|-----------|----------------------|---------|
+| `nodejs`  |version of the nodejs | '4.x'   |
+
 ## Debug
 
 Set `sip.traseSip` and `sip.log.level` with `true` and `3` of `config.json` repectively. 
