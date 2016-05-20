@@ -7,7 +7,25 @@
 
 and the development and test environment as well.
 
+## Shortcut to launch asterisk with ast_mongo
+
+You can use the [patches](ast_mongo/asterisk/patches) to make asterisk with ast_mongo;
+
+```
+$ wget -nv "http://downloads.asterisk.org/pub/telephony/asterisk/releases/asterisk-x" -O - | tar -zxf -
+$ cd asterisk-x
+$ wget https://github.com/minoruta/ast_mongo/blob/master/asterisk/patches/ast_mongo-x.patch
+$ patch -p1 -i ast_mongo-x.patch
+$ ./bootstrap.sh
+$ ./configure
+$ make
+$ sudo make install
+$ ...
+```
+
 ## Install, build and test it
+
+This is another opiton to test ast_mongo;
 
 1. `git clone https://github.com/minoruta/ast_mongo.git`
 2. Launch the [mongodb VM](mongodb) to make backend MongoDB service.

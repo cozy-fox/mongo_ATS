@@ -100,18 +100,44 @@ git init
 git add .
 git commit . -m "initial"
 ## add files for MongoDB functions
-cd ./cdr
-ln -s /vagrant/src/cdr_mongodb.c
-cd ../res
-ln -s /vagrant/src/res_mongodb.c
-ln -s /vagrant/src/res_mongodb.exports.in
-ln -s /vagrant/src/res_config_mongodb.c
-cd ../include/asterisk
-ln -s /vagrant/src/res_mongodb.h
-cd ../../
-##  patch for configure.ac makeopts.in build_tools/menuselect-deps.in
-##  which was generated with 'git diff configure.ac makeopts.in build_tools/menuselect-deps.in'
-patch -p1 -i /vagrant/src/mongodb.for.asterisk.patch
+
+if true ; then
+    if false ; then
+        cd ./cdr
+        ln -s /vagrant/src/cdr_mongodb.c
+        cd ../res
+        ln -s /vagrant/src/res_mongodb.c
+        ln -s /vagrant/src/res_mongodb.exports.in
+        ln -s /vagrant/src/res_config_mongodb.c
+        cd ../include/asterisk
+        ln -s /vagrant/src/res_mongodb.h
+        cd ../../
+        ##  patch for configure.ac makeopts.in build_tools/menuselect-deps.in
+        ##  which was generated with 'git diff configure.ac makeopts.in build_tools/menuselect-deps.in'
+        patch -p1 -i /vagrant/src/mongodb.for.asterisk.patch
+    else
+        cd ./cdr
+        cp /vagrant/src/cdr_mongodb.c .
+        git add .
+        cd ../res
+        cp /vagrant/src/res_mongodb.c .
+        cp /vagrant/src/res_mongodb.exports.in .
+        cp /vagrant/src/res_config_mongodb.c .
+        git add .
+        cd ../include/asterisk
+        cp /vagrant/src/res_mongodb.h .
+        git add .
+        cd ../../
+        ##  patch for configure.ac makeopts.in build_tools/menuselect-deps.in
+        ##  which was generated with 'git diff configure.ac makeopts.in build_tools/menuselect-deps.in'
+        patch -p1 -i /vagrant/src/mongodb.for.asterisk.patch
+        mkdir -p /vagrant/patches
+        git diff HEAD > /vagrant/patches/ast_mongo-$VERSION_ASTERISK.patch
+    fi
+else
+    patch -p1 -i /vagrant/patches/ast_mongo-$VERSION_ASTERISK.patch
+fi
+
 ## reconfigure
 ./bootstrap.sh
 ./configure
