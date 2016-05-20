@@ -58,9 +58,9 @@ The following properties can be configurable with a common file [`config.json`](
 | Property            |Definition           | Defined |
 |---------------------|---------------------|---------|
 |[`mongodb`][2]       |version of the module| '3.2'   |
-|[`mongo_c_driver`][3]|version of the module| '1.3.3' |
+|[`mongo_c_driver`][3]|version of the module| '1.3.5' |
 |[`pjsip`][4]         |version of the module| '2.4.5' |
-|[`asterisk`][1]      |version of Asterisk  | '13.7.2'|
+|[`asterisk`][1]      |version of Asterisk  | '13.9.1'|
 
 ## Debug
 
