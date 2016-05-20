@@ -9,7 +9,7 @@ and the development and test environment as well.
 
 ## Shortcut to launch asterisk with ast_mongo
 
-You can use the [patches](ast_mongo/asterisk/patches) to make asterisk with ast_mongo;
+You can use the [patches](asterisk/patches) to make asterisk with ast_mongo;
 
 ```
 $ wget -nv "http://downloads.asterisk.org/pub/telephony/asterisk/releases/asterisk-x" -O - | tar -zxf -
