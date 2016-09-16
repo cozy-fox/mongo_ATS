@@ -166,6 +166,16 @@ sudo ln -s /vagrant/configs/rtp.conf
 sudo ln -s /vagrant/configs/http.conf
 sudo ln -s /vagrant/configs/ari.conf
 sudo ln -s /vagrant/configs/pjsip.conf
+sudo touch acl.conf
+sudo touch cel.conf
+sudo touch features.conf
+sudo touch pjproject.conf
+sudo touch pjsip_notify.conf
+sudo touch pjsip_wizard.conf
+sudo touch res_config_sqlite3.conf
+sudo touch res_parking.conf
+sudo touch statsd.conf
+sudo touch udptl.conf
 
 #
 #
