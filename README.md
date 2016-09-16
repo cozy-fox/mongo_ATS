@@ -85,10 +85,10 @@ This project adds the three VMs in your local network;
 
 This project is developed under the following environments;
 
-- [Vagrant][3] 1.8.1
+- [Vagrant][3] 1.8.4
     - box: [parallels/ubuntu-14.04][7], v1.0.10
     - plugin: [vagrant-parallels][4] (1.6.1)
-        - with: [Parallels Desktop for Mac][5], version 10.3
+        - with: [Parallels Desktop for Mac][5], version 10.4
     - The [Vagrantfile][6]s of this project are written for vagrant-parallels.
 - MacBook Pro, OS X El Capitan version 10.11, 2 cores, 8GB memory.
 
