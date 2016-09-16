@@ -165,7 +165,6 @@ sudo ln -s /vagrant/configs/cdr.conf
 sudo ln -s /vagrant/configs/rtp.conf
 sudo ln -s /vagrant/configs/http.conf
 sudo ln -s /vagrant/configs/ari.conf
-sudo ln -s /vagrant/configs/pjsip.conf
 sudo touch acl.conf
 sudo touch cel.conf
 sudo touch features.conf

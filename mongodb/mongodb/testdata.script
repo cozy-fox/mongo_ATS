@@ -13,18 +13,23 @@ var TRANSPORT = "transport-ws";
 //  Definition for static configuration
 //
 var static_config = {
+    "pjsip": {
+        "transport-ws":[
+            {"name":"type", "val":"transport"},
+            {"name":"protocol", "val":"ws"},
+            {"name":"bind", "val":"0.0.0.0"},
+        ],
+    },
     "extensions": {
-        "general": {
-            "static": "yes",
-            "writeprotect": "yes",
-            "clearglobalvars": "no"
-        },
-        "context1": {
-            "exten": [
-                "_6.,1,NoOp(Calling ${EXTEN}@context1)",
-                "_6.,n,Dial(PJSIP/${EXTEN})",
-            ],
-        },
+        "general": [
+            {"name":"static", "val":"yes"},
+            {"name":"writeprotect", "val":"yes"},
+            {"name":"clearglobalvars", "val":"no"},
+        ],
+        "context1": [
+            {"name":"exten", "val":"_6.,1,NoOp(Calling ${EXTEN}@context1)"},
+            {"name":"exten", "val":"_6.,n,Dial(PJSIP/${EXTEN})"},
+        ],
     },
 };
 
@@ -56,43 +61,30 @@ var ps_endpoints = [
 //  @param config is record set to be loaded 
 //  @param collection is name of collection to load the records
 //
+
 var write_config = function(config, collection) {
-    var cat_metric = 1;
+    var cat_metric = 0;
     for (var fname in config) {
         var file = config[fname];
         for (var cname in file) {
             var category = file[cname];
-            for (var var_name in category) {
-                var var_val = category[var_name];
-                if (var_val instanceof Array) {
-                    var var_metric = 0;
-                    for (var i in var_val) {
-                        var data = {
-                            cat_metric: cat_metric,
-                            var_metric: var_metric++,
-                            commented: 0,
-                            filename: fname + ".conf",
-                            category: cname,
-                            var_name: var_name,
-                            var_val: var_val[i],
-                        };
-                        db[collection].insert(data);
-                    }
-                }
-                else {
+            if (category instanceof Array) {
+                var var_metric = 0;
+                for (var i in category) {
                     var data = {
                         cat_metric: cat_metric,
-                        var_metric: 0,
+                        var_metric: var_metric++,
                         commented: 0,
                         filename: fname + ".conf",
                         category: cname,
-                        var_name: var_name,
-                        var_val: var_val,
+                        var_name: category[i].name,
+                        var_val: category[i].val,
                     };
+                    print("data=" + JSON.stringify(data));
                     db[collection].insert(data);
                 }
-                cat_metric++;
             }
+            cat_metric++;
         }
     }
 }
