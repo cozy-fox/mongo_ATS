@@ -920,18 +920,30 @@ static struct ast_config *load(
                 break;
             }
             category = bson_iter_utf8(&iter, &length);
+            if (!category) {
+                ast_log(LOG_ERROR, "cannot read category.\n");
+                break;                
+            }
 
             if(!bson_iter_find(&iter, "var_name")) {
                 ast_log(LOG_ERROR, "no var_name found!\n");
                 break;
             }
             var_name = bson_iter_utf8(&iter, &length);
+            if (!var_name) {
+                ast_log(LOG_ERROR, "cannot read var_name.\n");
+                break;                
+            }
 
             if(!bson_iter_find(&iter, "var_val")) {
                 ast_log(LOG_ERROR, "no var_val found!\n");
                 break;
             }
             var_val = bson_iter_utf8(&iter, &length);
+            if (!var_val) {
+                ast_log(LOG_ERROR, "cannot read var_val.\n");
+                break;                
+            }
 
             if (!strcmp (var_val, "#include")) {
                 if (!ast_config_internal_load(var_val, cfg, loader_flags, "", who_asked)) {
