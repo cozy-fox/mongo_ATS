@@ -38,8 +38,8 @@ var static_config = {
 //  See https://wiki.asterisk.org/wiki/display/AST/Setting+up+PJSIP+Realtime as well.
 //
 var ps_aors = [
-    {_id:"6001", max_contacts:10},
-    {_id:"6002", max_contacts:10},
+    {_id:"6001", max_contacts:10, qualify_frequency:60},
+    {_id:"6002", max_contacts:10, qualify_frequency:0},
     {_id:"6003", max_contacts:10},
 ];
 
@@ -50,7 +50,7 @@ var ps_auths = [
 ];
 
 var ps_endpoints = [
-    {_id:"6001", transport:TRANSPORT, aors:"6001", auth:"6001", context:"context1", disallow:"all", allow:"ulaw", direct_media:"no"},
+    {_id:"6001", transport:TRANSPORT, aors:"6001", auth:"6001", context:"context1", disallow:"all", allow:"ulaw", direct_media:"no", mailboxes:"6001@context1"},
     {_id:"6002", transport:TRANSPORT, aors:"6002", auth:"6002", context:"context1", disallow:"all", allow:"ulaw", direct_media:"no"},
     {_id:"6003", transport:TRANSPORT, aors:"6003", auth:"6003", context:"context1", disallow:"all", allow:"ulaw", direct_media:"no"},
 ];
