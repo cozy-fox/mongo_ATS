@@ -82,6 +82,17 @@ static const char *key_asterisk2mongo(const char *key)
 }
 
 /*! 
+ *  check if the specified string is integer
+ *
+ *  \retval true if it's an integer
+ */
+static int is_integer(const char* pstr)
+{
+    size_t span = strspn(pstr, "0123456789");
+    return span && pstr[span] == '\0';
+}
+
+/*! 
  *  assume the specified src doesn't have any escaping letters for mongo such as \, ', ".
  *
  *  \retval a pointer same as dst. 
@@ -203,24 +214,76 @@ static bson_t *make_query(const struct ast_variable *fields, const char *orderby
             }
             strcpy(buf, fields->name);
             count = str_split(buf, " ", tokens);
+            err = true;
 
             switch(count) {
                 case 1:
                     err = !BSON_APPEND_UTF8(query, key_asterisk2mongo(fields->name), fields->value);
                     break;
                 case 2:
-                    if (strcasecmp(tokens[1], "LIKE")) {
-                        ast_log(LOG_WARNING, "unexpected operator \"%s\".\n", tokens[1]);
+                    if (!strcasecmp(tokens[1], "LIKE")) {
+                        condition = make_condition(fields->value);
+                    }
+                    else if (!strcasecmp(tokens[1], "!=")) {
+                        // {
+                        //     tokens[0]: {
+                        //         "$exists" : true, 
+                        //         "$ne" : value 
+                        //     }
+                        // }
+                        condition = BCON_NEW(
+                            "$exists", BCON_BOOL(1),
+                            "$ne", BCON_UTF8(fields->value)
+                        );
+                    }
+                    else if (!strcasecmp(tokens[1], ">")) {
+                        // {
+                        //     tokens[0]: {
+                        //         "$gt" : value 
+                        //     }
+                        // }
+                        if (is_integer(fields->value)) {
+                            int32_t number = atoi(fields->value);
+                            condition = BCON_NEW("$gt", BCON_INT32(number));
+                        }
+                        else {
+                            condition = BCON_NEW("$gt", BCON_UTF8(fields->value));
+                        }
+                    }
+                    else if (!strcasecmp(tokens[1], "<=")) {
+                        // {
+                        //     tokens[0]: {
+                        //         "$lte" : value 
+                        //     }
+                        // }
+                        if (is_integer(fields->value)) {
+                            int32_t number = atoi(fields->value);
+                            condition = BCON_NEW("$lte", BCON_INT32(number));
+                        }
+                        else {
+                            condition = BCON_NEW("$lte", BCON_UTF8(fields->value));
+                        }
+                    }
+                    else {
+                        ast_log(LOG_WARNING, "unexpected operator \"%s\" of \"%s\" \"%s\".\n", tokens[1], fields->name, fields->value);
                         break;
                     }
-                    condition = make_condition(fields->value);
-                    if (!condition)
+                    if (!condition) {
+                        ast_log(LOG_ERROR, "something wrong.\n");
                         break;
+                    }
+
                     err = !BSON_APPEND_DOCUMENT(query, key_asterisk2mongo(tokens[0]), condition);
-                    bson_destroy((bson_t*)condition);
+
                     break;
                 default:
                     ast_log(LOG_WARNING, "not handled, name=%s, value=%s.\n", fields->name, fields->value);
+            }
+            if (condition)
+                bson_destroy((bson_t*)condition);
+            else if (count > 1) {
+                ast_log(LOG_ERROR, "something wrong.\n");
+                break;
             }
         }
         if (err) {
@@ -592,9 +655,8 @@ static struct ast_config* realtime_multi(const char *database, const char *table
             ast_category_append(cfg, cat);
         }
     } while(0);
+    ast_log(LOG_DEBUG, "end of query.\n");
 
-    if (doc)
-        bson_destroy((bson_t *)doc);
     if (query)
         bson_destroy((bson_t *)query);
     if (cursor)
