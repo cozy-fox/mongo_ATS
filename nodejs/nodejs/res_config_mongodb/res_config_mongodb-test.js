@@ -37,7 +37,7 @@ describe('A PJSIP UAS managed by res_config_mongodb', function()
     it("should be offline at first", function(done) 
     {
         testlib.ari.getEndpointStatus(test_ep.id, test_ep.tech, function(status) {
-            expect(status).to.be.equal("offline");
+            expect(status).to.be.oneOf(["offline", "unknown"]);
             done();
         });
     })
