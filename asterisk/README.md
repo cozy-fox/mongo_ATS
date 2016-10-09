@@ -60,7 +60,7 @@ The following properties can be configurable with a common file [`config.json`](
 |[`mongodb`][2]       |version of the module| '3.2'   |
 |[`mongo_c_driver`][3]|version of the module| '1.4.0' |
 |[`pjsip`][4]         |version of the module| '2.4.5' |
-|[`asterisk`][1]      |version of Asterisk  | '13.11.2'|
+|[`asterisk`][1]      |version of Asterisk  | '14.0.2'|
 
 ## Debug
 

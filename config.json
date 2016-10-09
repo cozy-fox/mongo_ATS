@@ -2,6 +2,6 @@
   "mongodb": "3.2",
   "mongo_c_driver": "1.4.0",
   "pjsip": "2.4.5",
-  "asterisk": "13.11.2",
+  "asterisk": "14.0.2",
   "nodejs": "4.x"
 }
