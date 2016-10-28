@@ -67,28 +67,32 @@ sudo make install
 #
 #   Install pjsip library                   http://www.pjsip.org/download.htm
 #
-cd /home/vagrant
-wget -nv "http://www.pjsip.org/release/$VERSION_PJSIP/pjproject-$VERSION_PJSIP.tar.bz2" -O - | tar xjf -
-cd pjproject-$VERSION_PJSIP
-git init
-git add .
-git commit . -m "initial"
-./configure \
-    --enable-shared \
-    --disable-oss \
-    --disable-video \
-    --disable-speex-aec \
-    --disable-g722-codec \
-    --disable-g7221-codec \
-    --disable-speex-codec \
-    --disable-ilbc-codec \
-    --disable-sdl \
-    --disable-v4l2 \
-    --disable-opencore-amr \
-    --disable-silk
-make dep && make
-sudo make install
-sudo ldconfig
+if [ $VERSION_PJSIP \< "2.5" ] ; then
+    cd /home/vagrant
+    wget -nv "http://www.pjsip.org/release/$VERSION_PJSIP/pjproject-$VERSION_PJSIP.tar.bz2" -O - | tar xjf -
+    cd pjproject-$VERSION_PJSIP
+    git init
+    git add .
+    git commit . -m "initial"
+    ./configure \
+        --enable-shared \
+        --disable-oss \
+        --disable-video \
+        --disable-speex-aec \
+        --disable-g722-codec \
+        --disable-g7221-codec \
+        --disable-speex-codec \
+        --disable-ilbc-codec \
+        --disable-sdl \
+        --disable-v4l2 \
+        --disable-opencore-amr \
+        --disable-silk
+    make dep && make
+    sudo make install
+    sudo ldconfig
+else
+    PJBUNDLED="--with-pjproject-bundled"
+fi
 
 #
 #   Build and Install Asterisk              http://www.asterisk.org/downloads
@@ -140,7 +144,7 @@ fi
 
 ## reconfigure
 ./bootstrap.sh
-./configure
+./configure $PJBUNDLED
 make menuselect.makeopts
 menuselect/menuselect \
     --disable cdr_csv \
