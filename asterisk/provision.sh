@@ -109,6 +109,8 @@ if true ; then
     if false ; then
         cd ./cdr
         ln -s /vagrant/src/cdr_mongodb.c
+	cd ../cel
+	ln -s /vagrant/src/cel_mongodb.c
         cd ../res
         ln -s /vagrant/src/res_mongodb.c
         ln -s /vagrant/src/res_mongodb.exports.in
@@ -123,6 +125,9 @@ if true ; then
         cd ./cdr
         cp /vagrant/src/cdr_mongodb.c .
         git add .
+	cd ../cel
+	cp /vagrant/src/cel_mongodb.c .
+	git add .
         cd ../res
         cp /vagrant/src/res_mongodb.c .
         cp /vagrant/src/res_mongodb.exports.in .
@@ -163,7 +168,8 @@ sudo ln -s /vagrant/configs/modules.conf
 sudo ln -s /vagrant/configs/logger.conf
 sudo ln -s /vagrant/configs/sorcery.conf
 sudo ln -s /vagrant/configs/extconfig.conf
-sudo ln -s /vagrant/configs/cdr_mongodb.conf 
+sudo ln -s /vagrant/configs/cdr_mongodb.conf
+sudo ln -s /vagrant/configs/cel_mongodb.conf
 sudo ln -s /vagrant/configs/res_config_mongodb.conf
 sudo ln -s /vagrant/configs/cdr.conf
 sudo ln -s /vagrant/configs/rtp.conf
