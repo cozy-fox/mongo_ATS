@@ -2,8 +2,9 @@
 
 [This VM][6] provides the following plugins for [Asterisk][1];
 
-1. [MongoDB][2] configuration engine,
-2. MongoDB CDR backend,
+1. Realtime configuration engine for MongoDB,
+2. CDR backend for MongoDB,
+3. CEL backend for MongoDB (contributed by [viktike][9], thanks [viktike][9]),
 
 and the development environment as well.
 
@@ -14,11 +15,12 @@ and the development environment as well.
 
 ## Custom plugins
 
-| module name           |for reatime|for CDR|related config file      |  Comment |
-|-----------------------|-----------|-------|-------------------------|----------|
-|`res_mongodb.so`       | require   |require|                         |as common library|
-|`res_config_mongodb.so`| require   |       |`res_config_mongodb.conf`<br>`sorcery.conf`<br>`extconfig.conf`|as realtime configuration engine|
-|`cdr_mongodb.so`       |           |require|`cdr_mongodb.conf`       |as cdr backend|
+| module name           |for reatime|CDR    |CEL    |related config file      |  Comment |
+|-----------------------|-----------|-------|-------|-------------------------|----------|
+|`res_mongodb.so`       | require   |require|require|                         |as common library|
+|`res_config_mongodb.so`| require   |       |       |`res_config_mongodb.conf`<br>`sorcery.conf`<br>`extconfig.conf`|as realtime configuration engine|
+|`cdr_mongodb.so`       |           |require|       |`cdr_mongodb.conf`       |as cdr backend|
+|`cel_mongodb.so`       |           |       |require|`cel_mongodb.conf`       |as cel backend|
 
 ## Config files
 
@@ -51,6 +53,13 @@ and the development environment as well.
         database=cdr                    ; name of database
         collection=cdr                  ; name of collection to record cdr data
 
+- [`cel_mongodb.conf`](configs/cel_mongodb.conf) specifies the location, name and collection of database for cel backend.
+
+        [mongodb]
+        uri=mongodb://mongodb.local     ; location of database
+        database=cel                    ; name of database
+        collection=cel                  ; name of collection to record cel data
+
 ## Vagrantfile
 
 The following properties can be configurable with a common file [`config.json`](../config.json);
@@ -73,7 +82,7 @@ The following properties can be configurable with a common file [`config.json`](
 ## License and Copyright
 
 - License: GNU GENERAL PUBLIC LICENSE Version 2
-- Copyright: (C) 2016, KINOSHITA minoru
+- Copyright: (C) 2016, KINOSHITA minoru, [viktike][9] for cel_mongodb
 
 [1]: http://asterisk.org/        "Asterisk"
 [2]: https://mongodb.org/        "MongoDB"
@@ -81,3 +90,4 @@ The following properties can be configurable with a common file [`config.json`](
 [4]: http://www.pjsip.org       "PJSIP"
 [5]: https://wiki.asterisk.org/wiki/display/AST/Setting+up+PJSIP+Realtime
 [6]: https://github.com/minoruta/ast_mongo/tree/master/asterisk
+[9]: https://github.com/viktike

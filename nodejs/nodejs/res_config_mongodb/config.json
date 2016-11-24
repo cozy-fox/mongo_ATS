@@ -15,6 +15,11 @@
             "uri": "mongodb://mongodb.local:27017",
             "db": "asterisk"
         },
+        "cel": {
+            "uri": "mongodb://mongodb.local:27017",
+            "db": "cel",
+            "collection": "cel"
+        },
         "cdr": {
             "uri": "mongodb://mongodb.local:27017",
             "db": "cdr",

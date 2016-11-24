@@ -155,3 +155,30 @@ exports.getCdrs = function(callback) {
         });
     });
 }
+
+/**
+ *  get the latest list of CEL from db
+ *
+ *  @param {Function} callback - returns result
+ */
+exports.getCels = function(callback) {
+
+    var uri = config.cel.uri + "/" + config.cel.db;
+    var serverId = getServerId();
+    var conditions = serverId 
+        ? {serverid: serverId} 
+        : {};
+
+    MongoClient.connect(uri, function(err, db) 
+    {
+        assert.isNull(err, `unexpected error, ${uri}, ${err}`);
+        db
+        .collection(config.cel.collection)
+        .find(conditions)
+        .toArray(function(err, cels) {
+            assert.isNull(err, `unexpected error, ${config.cel.collection}, ${conditions}, ${err}`);
+            db.close();
+            callback(cels);
+        });
+    });
+}

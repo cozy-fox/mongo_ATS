@@ -1,9 +1,10 @@
-# Configuration engine and CDR backend for Asterisk with MongoDB
+# Realtime configuration engine and CDR&CEL backend for Asterisk with MongoDB
 
 [This project][8] provides the following plugins for [Asterisk][1] with [MongoDB][2];
 
-1. MongoDB configuration engine,
-2. MongoDB CDR backend,
+1. Realtime configuration engine for MongoDB,
+2. CDR backend for MongoDB,
+3. CEL backend for MongDB (contributed by [viktike][9], thanks [viktike][9]),
 
 and the development and test environment as well.
 
@@ -68,6 +69,11 @@ vagrant@nodejs:~/nodejs/res_config_mongodb$ npm test            ; start the test
 
   1 passing (1s)
 
+  CEL by cel_mongodb
+    ✓ should log event transactions (88ms)
+
+  1 passing (1s)
+
 vagrant@nodejs:~/nodejs/res_config_mongodb$ 
 ```
 
@@ -100,7 +106,7 @@ This project is developed under the following environments;
         - GNU GENERAL PUBLIC LICENSE Version 2
     - Any other resources and files: 
         - The MIT License (MIT)
-- Copyright: (C) 2016, KINOSHITA minoru
+- Copyright: (C) 2016, KINOSHITA minoru, [viktike][9] for cel_mongodb
 
 [1]: http://asterisk.org/        "Asterisk"
 [2]: https://mongodb.org/        "MongoDB"
@@ -110,3 +116,4 @@ This project is developed under the following environments;
 [6]: https://www.vagrantup.com/docs/vagrantfile/    "Vagrantfile"
 [7]: https://atlas.hashicorp.com/parallels/boxes/ubuntu-14.04
 [8]: https://github.com/minoruta/ast_mongo
+[9]: https://github.com/viktike
