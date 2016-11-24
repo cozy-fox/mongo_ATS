@@ -109,8 +109,8 @@ if true ; then
     if false ; then
         cd ./cdr
         ln -s /vagrant/src/cdr_mongodb.c
-	cd ../cel
-	ln -s /vagrant/src/cel_mongodb.c
+        cd ../cel
+        ln -s /vagrant/src/cel_mongodb.c
         cd ../res
         ln -s /vagrant/src/res_mongodb.c
         ln -s /vagrant/src/res_mongodb.exports.in
@@ -125,9 +125,9 @@ if true ; then
         cd ./cdr
         cp /vagrant/src/cdr_mongodb.c .
         git add .
-	cd ../cel
-	cp /vagrant/src/cel_mongodb.c .
-	git add .
+        cd ../cel
+        cp /vagrant/src/cel_mongodb.c .
+        git add .
         cd ../res
         cp /vagrant/src/res_mongodb.c .
         cp /vagrant/src/res_mongodb.exports.in .
@@ -172,11 +172,11 @@ sudo ln -s /vagrant/configs/cdr_mongodb.conf
 sudo ln -s /vagrant/configs/cel_mongodb.conf
 sudo ln -s /vagrant/configs/res_config_mongodb.conf
 sudo ln -s /vagrant/configs/cdr.conf
+sudo ln -s /vagrant/configs/cel.conf
 sudo ln -s /vagrant/configs/rtp.conf
 sudo ln -s /vagrant/configs/http.conf
 sudo ln -s /vagrant/configs/ari.conf
 sudo touch acl.conf
-sudo touch cel.conf
 sudo touch features.conf
 sudo touch pjproject.conf
 sudo touch pjsip_notify.conf

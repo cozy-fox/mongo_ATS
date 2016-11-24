@@ -2,8 +2,9 @@
 
 [This VM][4] provides testing environment for plugins;
 
-1. res_config_mongodb for configuration engine,
-2. cdr_mongodb for CDR backend.
+1. res_config_mongodb-test for realtime configuration engine,
+2. cdr_mongodb-test for CDR backend,
+3. cel_mongodb-test for CEL backend.
 
 ## Launch a VM for testing
 
@@ -46,6 +47,11 @@ vagrant@nodejs:~/nodejs/res_config_mongodb$ npm test
 
   1 passing (1s)
 
+  CEL by cel_mongodb
+    ✓ should log event transactions (88ms)
+
+  1 passing (1s)
+
 vagrant@nodejs:~/nodejs/res_config_mongodb$ 
 ```
 ## Test conditions
@@ -69,6 +75,11 @@ vagrant@nodejs:~/nodejs/res_config_mongodb$
         "config": {
             "uri": "mongodb://mongodb.local:27017",
             "db": "asterisk"
+        },
+        "cel": {
+            "uri": "mongodb://mongodb.local:27017",
+            "db": "cel",
+            "collection": "cel"
         },
         "cdr": {
             "uri": "mongodb://mongodb.local:27017",
@@ -97,7 +108,7 @@ The following property can be configurable with a common file [`config.json`](..
 
 ## Debug
 
-Set `sip.traseSip` and `sip.log.level` with `true` and `3` of `config.json` repectively. 
+Set `sip.traceSip` and `sip.log.level` with `true` and `3` of `config.json` repectively. 
 See [SIP.UA Configuration Parameters][1] for detail.
 
     {
