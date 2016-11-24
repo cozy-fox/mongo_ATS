@@ -60,7 +60,7 @@ sudo apt-get install -y mongodb-org-shell mongodb-org-tools
 cd /home/vagrant
 wget -nv "https://github.com/mongodb/mongo-c-driver/releases/download/$VERSION_MONGOC/mongo-c-driver-$VERSION_MONGOC.tar.gz" -O - | tar xzf -
 cd mongo-c-driver-$VERSION_MONGOC
-./configure
+./configure --disable-automatic-init-and-cleanup
 make
 sudo make install
 
