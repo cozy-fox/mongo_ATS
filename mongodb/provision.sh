@@ -6,17 +6,12 @@
 # Where:
 #       $1 = version of MongoDB server
 #
-# Copyright: (C) 2016 KINOSHITA minoru
+# Copyright: (C) 2016-17 KINOSHITA minoru
 # License: The MIT License (MIT)
 #
 
+HOME='/home/vagrant'
 VERSION_MONGODB=$1
-
-#
-#   Update system
-#
-sudo apt-get update
-sudo apt-get upgrade -y
 
 #
 # Install essential packages

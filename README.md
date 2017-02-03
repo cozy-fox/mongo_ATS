@@ -83,16 +83,16 @@ This project adds the three VMs in your local network;
 
 |VM                  |Function                                        |Guest OS    |mDNS name     |
 |--------------------|------------------------------------------------|------------|--------------|
-|[mongodb](mongodb)  |provides backend MongoDB service                |Ubuntu 14.04|mongodb.local |
-|[asterisk](asterisk)|provides an evironment to build and run Asterisk|Ubuntu 14.04|asterisk.local|
-|[nodejs](nodejs)    |provides an evironment to test Asterisk         |Ubuntu 14.04|nodejs.local  |
+|[mongodb](mongodb)  |provides backend MongoDB service                |Ubuntu 16.04|mongodb.local |
+|[asterisk](asterisk)|provides an evironment to build and run Asterisk|Ubuntu 16.04|asterisk.local|
+|[nodejs](nodejs)    |provides an evironment to test Asterisk         |Ubuntu 16.04|nodejs.local  |
 
 ## Requirements
 
 This project is developed under the following environments;
 
 - [Vagrant][3] 1.8.4
-    - box: [parallels/ubuntu-14.04][7], v1.0.10
+    - box: [parallels/ubuntu-16.04][7], v2.0.5
     - plugin: [vagrant-parallels][4] (1.6.1)
         - with: [Parallels Desktop for Mac][5], version 10.4
     - The [Vagrantfile][6]s of this project are written for vagrant-parallels.

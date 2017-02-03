@@ -1,7 +1,7 @@
 #
 # VM for building Asterisk with Mongodb
 #
-# Copyright: (C) 2016 KINOSHITA minoru
+# Copyright: (C) 2016-17 KINOSHITA minoru
 # License: The MIT License (MIT)
 #
 
@@ -31,7 +31,7 @@ Vagrant.configure(2) do |config|
   #
   # Configuration of VM
   #
-  config.vm.box = "parallels/ubuntu-14.04"
+  config.vm.box = "parallels/ubuntu-16.04"
   config.vm.hostname = hostname
   config.vm.network "public_network", bridge: 'en0'
   config.vm.provider "parallels" do |prl|
@@ -42,6 +42,7 @@ Vagrant.configure(2) do |config|
   #
   # Provision Asterisk with the essential environments
   #
+  config.vm.provision 'Wait for unattended-upgrades', type: 'shell', path: './wait_unattended_upgrades.sh', args: %w( dpkg apt unattended-upgrade )
   config.vm.provision "shell" do |s|
     s.inline = "sudo -u vagrant sh /vagrant/provision.sh $@"
     s.args   = [mongodb, mongo_c_driver, pjsip, asterisk]

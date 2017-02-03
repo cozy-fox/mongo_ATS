@@ -9,37 +9,33 @@
 #       $3 = version of pjsip
 #       $4 = version of Asterisk
 #
-# Copyright: (C) 2016 KINOSHITA minoru
+# Copyright: (C) 2016-17 KINOSHITA minoru
 # License: The MIT License (MIT)
 #
 
+HOME='/home/vagrant'
 VERSION_MONGODB=$1
 VERSION_MONGOC=$2
 VERSION_PJSIP=$3
 VERSION_ASTERISK=$4
 
 #
-#   Update system
-#
-sudo apt-get update
-sudo apt-get upgrade -y
-
-#
 # Install essential packages
 #
 sudo apt-get install -y \
-    avahi-daemon \
-    build-essential \
-    pkg-config \
-    autoconf \
-    libcurl4-openssl-dev \
-    libsrtp0-dev \
     libssl-dev \
+    libsasl2-dev \
     libncurses5-dev \
     libnewt-dev \
     libxml2-dev \
     libsqlite3-dev \
     libjansson-dev \
+    libcurl4-openssl-dev \
+    libsrtp0-dev \
+    pkg-config \
+    build-essential \
+    autoconf \
+    avahi-daemon \
     uuid-dev \
     wget \
     git \
@@ -57,7 +53,7 @@ sudo apt-get install -y mongodb-org-shell mongodb-org-tools
 #
 #   Install MongoDB C Driver for client     https://github.com/mongodb/mongo-c-driver/releases
 #
-cd /home/vagrant
+cd $HOME
 wget -nv "https://github.com/mongodb/mongo-c-driver/releases/download/$VERSION_MONGOC/mongo-c-driver-$VERSION_MONGOC.tar.gz" -O - | tar xzf -
 cd mongo-c-driver-$VERSION_MONGOC
 ./configure --disable-automatic-init-and-cleanup
@@ -68,7 +64,7 @@ sudo make install
 #   Install pjsip library                   http://www.pjsip.org/download.htm
 #
 if [ $VERSION_PJSIP \< "2.5" ] ; then
-    cd /home/vagrant
+    cd $HOME
     wget -nv "http://www.pjsip.org/release/$VERSION_PJSIP/pjproject-$VERSION_PJSIP.tar.bz2" -O - | tar xjf -
     cd pjproject-$VERSION_PJSIP
     git init
@@ -97,7 +93,7 @@ fi
 #
 #   Build and Install Asterisk              http://www.asterisk.org/downloads
 #
-cd /home/vagrant
+cd $HOME
 wget -nv "http://downloads.asterisk.org/pub/telephony/asterisk/releases/asterisk-$VERSION_ASTERISK.tar.gz" -O - | tar -zxf -
 cd asterisk-$VERSION_ASTERISK
 git init
