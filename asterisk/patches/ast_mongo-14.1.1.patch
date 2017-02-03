@@ -663,7 +663,7 @@ index 9ff40d7..aeef5e7 100644
  
 diff --git a/res/res_config_mongodb.c b/res/res_config_mongodb.c
 new file mode 100644
-index 0000000..4a22d7f
+index 0000000..6e8b494
 --- /dev/null
 +++ b/res/res_config_mongodb.c
 @@ -0,0 +1,1177 @@
@@ -814,11 +814,11 @@ index 0000000..4a22d7f
 +    char tail = *(sql + strlen(sql) - 1);
 +
 +    if (strcmp(sql, "%") == 0) {
-+        const char* json = "{ \"$exists\": true, \"$not\": {\"$size\": 0}} }";
++        const char* json = "{ \"$exists\": true, \"$not\": {\"$size\": 0}}";
 +        bson_error_t error;
 +        condition = bson_new_from_json((const uint8_t*)json, -1, &error);
 +        if (!condition)
-+            ast_log(LOG_ERROR, "cannot generated condition from \"%s\"\n", json);
++            ast_log(LOG_ERROR, "cannot generated condition from \"%s\", %d.%d:%s\n", json, error.domain, error.code, error.message);
 +    }
 +    else if (head == '%' && tail == '%') {
 +        strcopy(sql+1, patern, sizeof(patern)-1);
