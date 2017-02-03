@@ -9,8 +9,13 @@
 var expect = require('chai').expect;
 var assert = require('chai').assert;
 var async = require('async');
+var _ = require('lodash');
 var testlib = require('./testlib');
 var config = require('./config').mongodb.cdr;
+//
+//  Expected test result
+//
+var expected = require('./cdr');
 
 //
 //  Loging test for cdr_mongodb
@@ -85,29 +90,10 @@ describe('CDR by cdr_mongodb', function()
             {
                 expect(cdrs.length).to.be.equal(1);
                 var cdr = cdrs[0];
-
-                expect(cdr.clid).to.be.equal(`\"\" <${test_ep[1].id}>`);
-                expect(cdr.src).to.be.equal(test_ep[1].id);
-                expect(cdr.dst).to.be.equal(test_ep[0].id);
-                expect(cdr.dcontext).to.be.equal("context1");
-                expect(cdr.channel.split("-")[0]).to.be.equal(`${test_ep[1].tech}/${test_ep[1].id}`); 
-                expect(cdr.dstchannel.split("-")[0]).to.be.equal(`${test_ep[0].tech}/${test_ep[0].id}`);
-                expect(cdr.lastapp).to.be.equal("Dial");
-                expect(cdr.lastdata).to.be.equal(`${test_ep[0].tech}/${test_ep[0].id}`);
-                expect(cdr.disposition).to.be.equal("NO ANSWER");
-                expect(cdr.amaflags).to.exist;
-                expect(cdr.accountcode).to.exist;
-                expect(cdr.uniqueid).to.exist;
-                expect(cdr.userfield).to.exist;
-                expect(cdr.peeraccount).to.exist;
-                expect(cdr.linkedid).to.exist;
-                expect(cdr.duration).to.be.equal(0);
-                expect(cdr.billsec).to.be.equal(0);
-                expect(cdr.sequence).to.exist;
-                expect(cdr.start).to.exist;
-                expect(cdr.answer).to.exist;
-                expect(cdr.end).to.exist;
-
+                _.forEach(expected, function(value, key) {
+                    var regexp = new RegExp(value);    
+                    expect(cdr[key]).to.match(regexp);
+                });
                 session.terminate();
                 done();
             });
