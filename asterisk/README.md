@@ -66,7 +66,7 @@ The following properties can be configurable with a common file [`config.json`](
 
 | Property            |Definition           | Defined | Comments |
 |---------------------|---------------------|---------|----------|
-|[`mongodb`][2]       |version of the module| '3.2'   |          |
+|[`mongodb`][2]       |version of the module| '3.4'   |          |
 |[`mongo_c_driver`][3]|version of the module| '1.6.0' |          |
 |[`pjsip`][4]         |version of the module| '2.5'   | note: use the pjsip bundled with asterisk if you specify '2.5' or later. |
 |[`asterisk`][1]      |version of Asterisk  | '14.1.1'|          |
@@ -82,7 +82,7 @@ The following properties can be configurable with a common file [`config.json`](
 ## License and Copyright
 
 - License: GNU GENERAL PUBLIC LICENSE Version 2
-- Copyright: (C) 2016, KINOSHITA minoru, [viktike][9] for cel_mongodb
+- Copyright: (C) 2016-17, KINOSHITA minoru, [viktike][9] for cel_mongodb
 
 [1]: http://asterisk.org/        "Asterisk"
 [2]: https://mongodb.org/        "MongoDB"

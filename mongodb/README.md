@@ -31,12 +31,12 @@ The following property can be configurable with a common file [`config.json`](..
 
 | Property  | Definition           | Defined |
 |-----------|----------------------|---------|
-| `mongodb` |version of the mongodb| '3.2'   |
+| `mongodb` |version of the mongodb| '3.4'   |
 
 
 ## License and Copyright
 
 - License: The MIT License (MIT)
-- Copyright: (C) 2016, KINOSHITA minoru
+- Copyright: (C) 2016-17, KINOSHITA minoru
 
 [1]: https://github.com/minoruta/ast_mongo/tree/master/mongodb
