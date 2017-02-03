@@ -93,8 +93,8 @@ This project is developed under the following environments;
 
 - [Vagrant][3] 1.8.4
     - box: [parallels/ubuntu-16.04][7], v2.0.5
-    - plugin: [vagrant-parallels][4] (1.6.1)
-        - with: [Parallels Desktop for Mac][5], version 10.4
+    - plugin: [vagrant-parallels][4] (1.6.3)
+        - with: [Parallels Desktop for Mac][5], version 12.1.3
     - The [Vagrantfile][6]s of this project are written for vagrant-parallels.
 - MacBook Pro, OS X El Capitan version 10.11, 2 cores, 8GB memory.
 
@@ -106,7 +106,7 @@ This project is developed under the following environments;
         - GNU GENERAL PUBLIC LICENSE Version 2
     - Any other resources and files: 
         - The MIT License (MIT)
-- Copyright: (C) 2016, KINOSHITA minoru, [viktike][9] for cel_mongodb
+- Copyright: (C) 2016-17, KINOSHITA minoru, [viktike][9] for cel_mongodb
 
 [1]: http://asterisk.org/        "Asterisk"
 [2]: https://mongodb.org/        "MongoDB"
@@ -114,6 +114,6 @@ This project is developed under the following environments;
 [4]: https://github.com/Parallels/vagrant-parallels     "vagrant-parallels"
 [5]: https://www.parallels.com  "Parallels Desktop for Mac"
 [6]: https://www.vagrantup.com/docs/vagrantfile/    "Vagrantfile"
-[7]: https://atlas.hashicorp.com/parallels/boxes/ubuntu-14.04
+[7]: https://atlas.hashicorp.com/parallels/boxes/ubuntu-16.04
 [8]: https://github.com/minoruta/ast_mongo
 [9]: https://github.com/viktike
