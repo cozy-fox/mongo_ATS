@@ -145,11 +145,11 @@ static const bson_t* make_condition(const char* sql)
     char tail = *(sql + strlen(sql) - 1);
 
     if (strcmp(sql, "%") == 0) {
-        const char* json = "{ \"$exists\": true, \"$not\": {\"$size\": 0}} }";
+        const char* json = "{ \"$exists\": true, \"$not\": {\"$size\": 0}}";
         bson_error_t error;
         condition = bson_new_from_json((const uint8_t*)json, -1, &error);
         if (!condition)
-            ast_log(LOG_ERROR, "cannot generated condition from \"%s\"\n", json);
+            ast_log(LOG_ERROR, "cannot generated condition from \"%s\", %d.%d:%s\n", json, error.domain, error.code, error.message);
     }
     else if (head == '%' && tail == '%') {
         strcopy(sql+1, patern, sizeof(patern)-1);
