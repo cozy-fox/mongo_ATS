@@ -1,4 +1,4 @@
-# Module Funtion Tests
+# Module Function Tests
 
 [This VM][4] provides testing environment for plugins;
 

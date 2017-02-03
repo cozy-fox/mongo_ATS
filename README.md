@@ -26,7 +26,7 @@ $ ...
 
 ## Install, build and test it
 
-This is another opiton to test ast_mongo;
+This is another option to test ast_mongo;
 
 1. `git clone https://github.com/minoruta/ast_mongo.git`
 2. Launch the [mongodb VM](mongodb) to make backend MongoDB service.

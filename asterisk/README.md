@@ -1,4 +1,4 @@
-# MongoDB Plugins for Asterik
+# MongoDB Plugins for Asterisk
 
 [This VM][6] provides the following plugins for [Asterisk][1];
 
@@ -8,7 +8,7 @@
 
 and the development environment as well.
 
-## Launch a VM to build and run Asteisk with the related modules
+## Launch a VM to build and run Asterisk with the related modules
 
     desktop$ cd asterisk                ; select asterisk VM
     desktop$ vagrant up                 ; launch it and generate environment to build and run Asterisk
