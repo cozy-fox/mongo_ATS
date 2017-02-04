@@ -96,7 +96,7 @@ This project is developed under the following environments;
     - plugin: [vagrant-parallels][4] (1.6.3)
         - with: [Parallels Desktop for Mac][5], version 12.1.3
     - The [Vagrantfile][6]s of this project are written for vagrant-parallels.
-- MacBook Pro, OS X El Capitan version 10.11, 2 cores, 8GB memory.
+- MacBook Pro, maxOS Sierra version 10.12, 2 cores, 8GB memory.
 
 
 ## Licenses and Copyright
