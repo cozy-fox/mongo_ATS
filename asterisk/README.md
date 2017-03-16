@@ -9,10 +9,10 @@ The **`ast_mongo`** project provides the following plugins for Asterisk;
 
 Plugin name            |Realtime    |CDR|CEL|Source code|Config file(s)
 -----------------------|------------|---|---|-----------|--------------
-`res_mongodb.so`       |*|*|*|[`res_mongodb.c`](src/res_mongodb.c)|
-`res_config_mongodb.so`|*| | |[`res_config_mongodb.c`](src/res_config_mongodb.c)| [`res_config_mongodb.conf`](test_bench/configs/res_config_mongodb.conf)<br>[`sorcery.conf`](test_bench/configs/sorcery.conf)<br>[`extconfig.conf`](test_bench/configs/extconfig.conf) |as realtime configuration engine
-`cdr_mongodb.so`       | |*| |[`cdr_mongodb.c`](src/cdr_mongodb.c)|[`cdr_mongodb.conf`](test_bench/configs/cdr_mongodb.conf)
-`cel_mongodb.so`       | | |*|[`cel_mongodb.c`](src/cel_mongodb.c)|[`cel_mongodb.conf`](test_bench/configs/cel_mongodb.conf)
+`res_mongodb.so`       | * | * | * | [`res_mongodb.c`](src/res_mongodb.c) |
+`res_config_mongodb.so`| * |   |   | [`res_config_mongodb.c`](src/res_config_mongodb.c) | [`res_config_mongodb.conf`](test_bench/configs/res_config_mongodb.conf)<br>[`sorcery.conf`](test_bench/configs/sorcery.conf)<br>[`extconfig.conf`](test_bench/configs/extconfig.conf) | as realtime configuration engine
+`cdr_mongodb.so`       |   | * |   | [`cdr_mongodb.c`](src/cdr_mongodb.c)|[`cdr_mongodb.conf`](test_bench/configs/cdr_mongodb.conf)
+`cel_mongodb.so`       |   |   | * | [`cel_mongodb.c`](src/cel_mongodb.c)|[`cel_mongodb.conf`](test_bench/configs/cel_mongodb.conf)
 
 
 ## How to get the plugins
@@ -50,19 +50,19 @@ Name of DB |Name of Collection |Comment
 ### Config files for the exmaple
 
 
-- [`res_config_mongodb.conf`](configs/res_config_mongodb.conf) for realtime configuration engine
+- [`res_config_mongodb.conf`](test_bench/configs/res_config_mongodb.conf) for realtime configuration engine
 
         [mongodb]
         uri=mongodb://mongodb.local/asterisk    ; location of database
 
-- [`sorcery.conf`](configs/sorcery.conf) specifies map from asterisk's resources to database's collections.
+- [`sorcery.conf`](test_bench/configs/sorcery.conf) specifies map from asterisk's resources to database's collections.
 
         [res_pjsip]
         endpoint=realtime,ps_endpoints  ; map endpoint to ps_endpoints source
         auth=realtime,ps_auths          ; map auth to ps_auths source
         aor=realtime,ps_aors            ; map aor to ps_aors source
 
-- [`extconfig.conf`](configs/extconfig.conf) specifies database for database's collections mapped above.
+- [`extconfig.conf`](test_bench/configs/extconfig.conf) specifies database for database's collections mapped above.
 
         [settings]
 
@@ -76,14 +76,14 @@ Name of DB |Name of Collection |Comment
         extensions.conf => mongodb,asterisk,ast_config 
         pjsip.conf => mongodb,asterisk,ast_config
 
-- [`cdr_mongodb.conf`](configs/cdr_mongodb.conf) specifies the location, name and collection of database for cdr backend.
+- [`cdr_mongodb.conf`](test_bench/configs/cdr_mongodb.conf) specifies the location, name and collection of database for cdr backend.
 
         [mongodb]
         uri=mongodb://mongodb.local/cdr ; location of database
         database=cdr                    ; name of database
         collection=cdr                  ; name of collection to record cdr data
 
-- [`cel_mongodb.conf`](configs/cel_mongodb.conf) specifies the location, name and collection of database for cel backend.
+- [`cel_mongodb.conf`](test_bench/configs/cel_mongodb.conf) specifies the location, name and collection of database for cel backend.
 
         [mongodb]
         uri=mongodb://mongodb.local/cel ; location of database

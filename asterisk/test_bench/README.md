@@ -84,7 +84,8 @@ It's eauivalent to;
 ### How to test
 
 - run `./test`
-  ```
+
+```
 $ git clone https://github.com/minoruta/ast_mongo.git
 $ cd ast_mongo/asterisk/test_bench
 $ ./test
@@ -130,7 +131,8 @@ end of test
 
 
 - run `./test clean` to clean up outstanding resources.
-  ```
+
+```
 $ ./test clean
 =================================
 clean the outstanding resources: asterisk, tester, ast_mongo1, ast_mongo2, ast_mongo3 and ast_mongo
