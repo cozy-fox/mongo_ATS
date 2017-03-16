@@ -1,0 +1,20 @@
+{
+  "name": "functionTest",
+  "version": "0.1.1",
+  "description": "function test for res_config_mongodb and cdr_mogngodb",
+  "scripts": {
+    "test": "make"
+  },
+  "author": "KINOSHITA minoru",
+  "license": "The MIT License (MIT)",
+  "devDependencies": {
+    "ari-client": "~1.1.1",
+    "async": "~1.5.2",
+    "chai": "~3.5.0",
+    "lodash": "~4.6.1",
+    "mocha": "^3.2.0",
+    "mongodb": "~2.2.24",
+    "mongodb-uri": "~0.9.7",
+    "sip.js": "~0.7.3"
+  }
+}

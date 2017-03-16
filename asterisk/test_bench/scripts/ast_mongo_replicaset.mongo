@@ -1,0 +1,9 @@
+config = {
+    "_id" : "ast_mongo_set", 
+    "members" : [ 
+        { "_id" : 0, "host" : "ast_mongo1.local:27017" }, 
+        { "_id" : 1, "host" : "ast_mongo2.local:27017" },
+        { "_id" : 2, "host" : "ast_mongo3.local:27017" }
+    ] 
+}
+rs.initiate(config)

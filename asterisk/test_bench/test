@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+#
+# Copyright: (C) 2016-17 KINOSHITA minoru
+# License: The MIT License (MIT)
+#
+PROJECT_ROOT=`pwd`/..
+NETWORK=ast_mongo
+CONFIG_FILE=$PROJECT_ROOT/../config.json
+MOUNT_POINT=/mnt
+#
+#
+#
+MONGODB_PRIMARY=ast_mongo1
+MONGODB_SECONDARY_1=ast_mongo2
+MONGODB_SECONDARY_2=ast_mongo3
+MONGODB_REPLICASET_NAME=ast_mongo_set
+ASTERISK=asterisk
+TESTER=tester
+#
+#   halt containers
+#
+if [ -n "$1" ] && [ $1 == 'halt' ]; then
+    echo =================================
+    echo halt the outstanding containers: $ASTERISK, $TESTER, $MONGODB_PRIMARY, $MONGODB_SECONDARY_1 and $MONGODB_SECONDARY_2
+    echo =================================
+    docker container stop $ASTERISK.local $TESTER.local $MONGODB_PRIMARY.local $MONGODB_SECONDARY_1.local $MONGODB_SECONDARY_2.local > /dev/null 2>&1
+    docker ps -a
+    exit 0
+fi
+#
+#   clean up containers and network
+#
+if [ -n "$1" ] && [ $1 == 'clean' ]; then
+    echo =================================
+    echo clean the outstanding resources: $ASTERISK, $TESTER, $MONGODB_PRIMARY, $MONGODB_SECONDARY_1, $MONGODB_SECONDARY_2 and $NETWORK
+    echo =================================
+    docker container rm -f $ASTERISK.local $TESTER.local $MONGODB_PRIMARY.local $MONGODB_SECONDARY_1.local $MONGODB_SECONDARY_2.local > /dev/null 2>&1
+    docker network rm $NETWORK > /dev/null 2>&1
+    docker ps -a
+    echo ""
+    docker network ls
+    exit 0
+fi
+#
+#   connect a container
+#
+if [ -n "$1" ] && [[ $1 =~ ^asterisk|tester$ ]]; then
+    docker exec -it $1.local bash
+    exit 0
+fi
+if [ -n "$1" ] && [[ $1 =~ ^ast_mongo[1..3]$ ]]; then
+    docker exec -it $1.local mongo
+    exit 0
+fi
+#
+#   prepare a common network
+#
+docker network inspect $NETWORK > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    docker network create $NETWORK
+fi
+#
+#   prepare a common database
+#
+echo deploy container $MONGODB_SECONDARY_1.local
+mongodb/mongors $MONGODB_SECONDARY_1 $NETWORK $MOUNT_POINT $MONGODB_REPLICASET_NAME no
+
+echo deploy container $MONGODB_SECONDARY_2.local
+mongodb/mongors $MONGODB_SECONDARY_2 $NETWORK $MOUNT_POINT $MONGODB_REPLICASET_NAME no
+
+echo deploy container $MONGODB_PRIMARY.local
+mongodb/mongors $MONGODB_PRIMARY     $NETWORK $MOUNT_POINT $MONGODB_REPLICASET_NAME yes
+#
+#   launch a testing target
+#
+echo deploy container $ASTERISK.local.
+asterisk/asterisk $ASTERISK $NETWORK $MOUNT_POINT $PROJECT_ROOT $CONFIG_FILE
+#
+#   run tester
+#
+echo =================================
+echo start testing with $ASTERISK, $MONGODB_PRIMARY, $MONGODB_SECONDARY_1 and $MONGODB_SECONDARY_2
+echo =================================
+tester/tester $TESTER $NETWORK $MOUNT_POINT
+echo =================================
+echo end of test
+echo =================================

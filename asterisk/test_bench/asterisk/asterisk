@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#
+# Copyright: (C) 2016-17 KINOSHITA minoru
+# License: The MIT License (MIT)
+#
+HOSTNAME=$1
+NETWORK=$2
+MOUNT_POINT=$3
+PROJECT_ROOT=$4
+CONFIG_FILE=$5
+#
+#
+#
+IMAGE_NAME=$HOSTNAME
+KEEP_ALIVE_CMD='tail -f /dev/null'
+ARGS=`cat $CONFIG_FILE | awk 'match($0, /[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH) }' | tr '\n' ' '`
+#
+#   make an image to build and test asterisk
+#
+docker iamge inspect $IMAGE_NAME > /dev/null 2>&1; if [ $? -ne 0 ]; then
+    docker build \
+        -t \
+        $IMAGE_NAME \
+        asterisk/
+fi
+#
+#   launch a target environment
+#
+docker container inspect $HOSTNAME.local > /dev/null 2>&1; if [ $? -eq 0 ]; then
+    docker start $HOSTNAME.local
+else
+    docker run \
+        --detach \
+        --hostname $HOSTNAME \
+        --name   $HOSTNAME.local \
+        --net    $NETWORK \
+        --volume $PROJECT_ROOT/src:$MOUNT_POINT/src \
+        --volume $PROJECT_ROOT/patches:$MOUNT_POINT/patches \
+        --volume `pwd`/scripts:$MOUNT_POINT/scripts \
+        --volume `pwd`/configs:/etc/asterisk \
+        $IMAGE_NAME \
+        $KEEP_ALIVE_CMD
+    #
+    #   build and run a target
+    #
+    docker exec $HOSTNAME.local bash -c "$MOUNT_POINT/scripts/provisioning.sh $ARGS"
+fi
+#
+#
+#
+docker exec $HOSTNAME.local bash -c 'service  asterisk restart'
+for i in {10..0}; do
+    echo waiting for asterisk launched up $i
+    sleep 1
+done
+echo container $HOSTNAME.local started.

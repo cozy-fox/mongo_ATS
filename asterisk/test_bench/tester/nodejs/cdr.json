@@ -1,0 +1,21 @@
+{ 
+  "_id": "[0-9a-f]{24}",
+  "clid": "\"\" <6002>",
+  "src": "6002",
+  "dst": "6001",
+  "dcontext": "context1",
+  "channel": "PJSIP/6002-[0-9a-f]{8}",
+  "dstchannel": "PJSIP/6001-[0-9a-f]{8}",
+  "lastapp": "Dial",
+  "lastdata": "PJSIP/6001",
+  "disposition": "NO ANSWER",
+  "amaflags": "DOCUMENTATION",
+  "accountcode": "",
+  "uniqueid": "asterisk-[0-9]{10}\\.[0-9]+",
+  "userfield": "",
+  "peeraccount": "",
+  "linkedid": "asterisk-[0-9]{10}\\.[0-9]+",
+  "duration": 0,
+  "billsec": 0,
+  "sequence": "[0-9]+"
+}
