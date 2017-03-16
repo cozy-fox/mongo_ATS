@@ -57,28 +57,28 @@ allows you to run a whole test of ast_mongo with this test bench.
 
 ### `./test halt`
 allows you to stop activities of outstanding containers.
-It's eauivalent to;
+It's equivalent to;
 - `docker container stop asterisk.local tester.local ast_mongo1.local ast_mongo2.local ast_mongo3.local`
 
 ### `./test clean`
 allows you to clean up all of outstanding resouces.
-It's eauivalent to;
+It's equivalent to;
 - `docker container rm -f asterisk.local tester.local ast_mongo1.local ast_mongo2.local ast_mongo3.local`
 - `docker network rm ast_mongo`
 
 ### `./test asterisk`
 allows you to connect a command shell of the asterisk container.
-It's eauivalent to;
+It's equivalent to;
 - `docker exec -it asterisk.local bash`
 
 ### `./test tester`
 allows you to connect a command shell of the tester container.
-It's eauivalent to;
+It's equivalent to;
 - `docker exec -it tester.local bash`
 
 ### `./test ast_mongo[1..3]`
 allows you to connect a mongo shell of the specified container.
-It's eauivalent to;
+It's equivalent to;
 - `docker exec -it ast_mongo[1..3].local mongo`
 
 ### How to test
