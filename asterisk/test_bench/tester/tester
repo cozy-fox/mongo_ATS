@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# Copyright: (C) 2016-17 KINOSHITA minoru
+# License: The MIT License (MIT)
+#
+HOSTNAME=$1
+NETWORK=$2
+MOUNT_POINT=$3
+#
+#
+#
+IMAGE=node:boron
+KEEP_ALIVE_CMD='tail -f /dev/null'
+#
+#   launch an environment for tester
+#
+docker container inspect $HOSTNAME.local > /dev/null 2>&1; if [ $? -eq 0 ]; then
+    docker start $HOSTNAME.local
+else
+    docker run \
+        --detach \
+        --hostname $HOSTNAME \
+        --name $HOSTNAME.local \
+        --net $NETWORK \
+        --volume `pwd`/tester/nodejs:/root/nodejs \
+        $IMAGE \
+        $KEEP_ALIVE_CMD
+    docker exec $HOSTNAME.local bash -c "cd /root/nodejs && npm install"
+    docker exec $HOSTNAME.local bash -c "cd /root/nodejs && npm uninstall -D mocha && npm install -D mocha"
+fi
+echo container $HOSTNAME.local started.
+#
+#   run test
+#
+docker exec $HOSTNAME.local bash -c "cd /root/nodejs; make"

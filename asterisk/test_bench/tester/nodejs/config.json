@@ -1,0 +1,34 @@
+{
+    "asterisk": {
+        "host": "asterisk.local",
+        "uri": "ws://asterisk.local:8088/ws"
+    },
+    "ari": {
+        "uri": "http://asterisk.local:8088",
+        "account": {
+            "user": "asterisk",
+            "password": "asterisk"
+        }
+    },
+    "mongodb": {
+        "config": {
+            "uri": "mongodb://ast_mongo1.local:27017,ast_mongo2.local:27017,ast_mongo3.local:27017/asterisk?replicaSet=ast_mongo_set&readPreference=nearest&slaveOk=true"
+        },
+        "cel": {
+            "uri": "mongodb://ast_mongo1.local:27017,ast_mongo2.local:27017,ast_mongo3.local:27017/cel?replicaSet=ast_mongo_set&readPreference=nearest&slaveOk=true",
+            "collection": "cel"
+        },
+        "cdr": {
+            "uri": "mongodb://ast_mongo1.local:27017,ast_mongo2.local:27017,ast_mongo3.local:27017/cdr?replicaSet=ast_mongo_set&readPreference=nearest&slaveOk=true",
+            "collection": "cdr"
+        }
+    },
+    "sip": {
+        "stunServers": [],
+        "registerExpires": 3,
+        "traceSip": false,
+        "log": {
+            "level": 0
+        }
+    }
+}

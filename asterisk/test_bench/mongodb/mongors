@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+#
+# Copyright: (C) 2016-17 KINOSHITA minoru
+# License: The MIT License (MIT)
+#
+HOSTNAME=$1
+NETWORK=$2
+MOUNT_POINT=$3
+MONGODB_REPLICASET_NAME=$4
+PRIMARY=$5
+#
+#   launch a common database for testing
+#
+docker container inspect $HOSTNAME.local > /dev/null 2>&1; if [ $? -eq 0 ]; then
+    docker start $HOSTNAME.local
+else
+    docker run \
+        --detach \
+        --hostname $HOSTNAME \
+        --name $HOSTNAME.local \
+        --net $NETWORK \
+        --volume `pwd`/scripts:$MOUNT_POINT/scripts \
+        mongo \
+        mongod --replSet $MONGODB_REPLICASET_NAME
+
+    if [ $PRIMARY == 'yes' ]; then
+        echo setting up as primary
+        for i in {2..0}; do
+            echo wait for a while $i
+            sleep 1
+        done
+        docker exec $HOSTNAME.local bash -c "mongo < $MOUNT_POINT/scripts/ast_mongo_replicaset.mongo"
+        for i in {15..0}; do
+            echo wait for a while $i
+            sleep 1
+        done
+        docker exec $HOSTNAME.local bash -c "mongo < $MOUNT_POINT/scripts/ast_mongo_data.mongo"
+    fi
+fi
+echo container $HOSTNAME.local started.

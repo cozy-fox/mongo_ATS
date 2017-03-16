@@ -1,0 +1,71 @@
+//
+//  Sample test data for ast_mongo
+//
+//  You can load this test data as follows;
+//  $ mongo < ast_mongo_data.mongo
+//
+use cdr
+db.dropDatabase()
+
+use cel
+db.dropDatabase()
+
+use asterisk;
+db.dropDatabase()
+
+//
+//  Definition for static configuration
+//
+var static_config = {
+    "pjsip": {
+        "transport-ws":[
+            {"name":"type", "val":"transport"},
+            {"name":"protocol", "val":"ws"},
+            {"name":"bind", "val":"0.0.0.0"},
+        ],
+    },
+    "extensions": {
+        "context1": [
+            {"name":"exten", "val":"_6.,1,NoOp(Calling ${EXTEN}@context1)"},
+            {"name":"exten", "val":"_6.,n,Dial(PJSIP/${EXTEN})"},
+        ],
+    },
+};
+
+//
+//  load configuration as static resources
+//
+//  @param config is record set to be loaded 
+//  @param collection is name of collection to load the records
+//
+var write_config = function(config, collection) {
+    var cat_metric = 0;
+    for (var fname in config) {
+        var file = config[fname];
+        for (var cname in file) {
+            var category = file[cname];
+            if (category instanceof Array) {
+                var var_metric = 0;
+                for (var i in category) {
+                    var data = {
+                        cat_metric: cat_metric,
+                        var_metric: var_metric++,
+                        commented: 0,
+                        filename: fname + ".conf",
+                        category: cname,
+                        var_name: category[i].name,
+                        var_val: category[i].val,
+                    };
+                    print("data=" + JSON.stringify(data));
+                    db[collection].insert(data);
+                }
+            }
+            cat_metric++;
+        }
+    }
+}
+
+//
+//  load static resources
+//
+write_config(static_config, "ast_config");

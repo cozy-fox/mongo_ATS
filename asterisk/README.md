@@ -1,88 +1,105 @@
 # MongoDB Plugins for Asterisk
 
-[This VM][6] provides the following plugins for [Asterisk][1];
+The **`ast_mongo`** project provides the following plugins for Asterisk;
 
-1. Realtime configuration engine for MongoDB,
-2. CDR backend for MongoDB,
-3. CEL backend for MongoDB (contributed by [viktike][9], thanks [viktike][9]),
+1. Realtime configuration engine with MongoDB,
+1. CDR backend for MongoDB,
+1. CEL backend for MongoDB (contributed by [viktike][9], thanks [viktike][9]),
+1. and a [test bench](test_bench) with MongoDB replica set based on Docker technology.
 
-and the development environment as well.
+Plugin name            |Realtime    |CDR|CEL|Source code|Config file(s)
+-----------------------|------------|---|---|-----------|--------------
+`res_mongodb.so`       |*|*|*|[`res_mongodb.c`](src/res_mongodb.c)|
+`res_config_mongodb.so`|*| | |[`res_config_mongodb.c`](src/res_config_mongodb.c)| [`res_config_mongodb.conf`](test_bench/configs/res_config_mongodb.conf)<br>[`sorcery.conf`](test_bench/configs/sorcery.conf)<br>[`extconfig.conf`](test_bench/configs/extconfig.conf) |as realtime configuration engine
+`cdr_mongodb.so`       | |*| |[`cdr_mongodb.c`](src/cdr_mongodb.c)|[`cdr_mongodb.conf`](test_bench/configs/cdr_mongodb.conf)
+`cel_mongodb.so`       | | |*|[`cel_mongodb.c`](src/cel_mongodb.c)|[`cel_mongodb.conf`](test_bench/configs/cel_mongodb.conf)
 
-## Launch a VM to build and run Asterisk with the related modules
 
-    desktop$ cd asterisk                ; select asterisk VM
-    desktop$ vagrant up                 ; launch it and generate environment to build and run Asterisk
+## How to get the plugins
 
-## Custom plugins
+The plugins are provided as source code patches to Asterisk.
+See [patches](patches) in detail.
 
-| module name           |for reatime|CDR    |CEL    |related config file      |  Comment |
-|-----------------------|-----------|-------|-------|-------------------------|----------|
-|`res_mongodb.so`       | require   |require|require|                         |as common library|
-|`res_config_mongodb.so`| require   |       |       |`res_config_mongodb.conf`<br>`sorcery.conf`<br>`extconfig.conf`|as realtime configuration engine|
-|`cdr_mongodb.so`       |           |require|       |`cdr_mongodb.conf`       |as cdr backend|
-|`cel_mongodb.so`       |           |       |require|`cel_mongodb.conf`       |as cel backend|
 
-## Config files
+## Test bench
 
-- See Asterisk's official document [Setting up PJSIP Realtime][5] as well.
+The test bench based on Docker technology for these plugins is also provided.
+You can examine how it works on your desktop simply.
+See [test bench](test_bench) in detail.
+
+
+## Setting up
+
+### Preconditions (example)
+
+- URI to database
+  - `mongodb://mongodb.local/[name of database]`
+  - see [Connection String URI Format](https://docs.mongodb.com/manual/reference/connection-string/) as well
+
+- Database structure
+
+Name of DB |Name of Collection |Comment
+-----------|-------------------|-------
+`asterisk` | `ps_endpoints`    | as realtime resources
+`asterisk` | `ps_auths`        | as realtime resources
+`asterisk` | `ps_aors`         | as realtime resources
+`asterisk` | `ast_config`      | as non-realtime resources
+`cdr`      | `cdr`
+`cel`      | `cel`
+
+### Config files for the exmaple
+
 
 - [`res_config_mongodb.conf`](configs/res_config_mongodb.conf) for realtime configuration engine
 
         [mongodb]
-        uri=mongodb://mongodb.local     ; location of database
+        uri=mongodb://mongodb.local/asterisk    ; location of database
 
 - [`sorcery.conf`](configs/sorcery.conf) specifies map from asterisk's resources to database's collections.
 
         [res_pjsip]
-        endpoint=realtime,ps_endpoints  ; map to ps_endpoints record
-        auth=realtime,ps_auths          ; map to ps_auths record
-        aor=realtime,ps_aors            ; map to ps_aors record
+        endpoint=realtime,ps_endpoints  ; map endpoint to ps_endpoints source
+        auth=realtime,ps_auths          ; map auth to ps_auths source
+        aor=realtime,ps_aors            ; map aor to ps_aors source
 
 - [`extconfig.conf`](configs/extconfig.conf) specifies database for database's collections mapped above.
 
         [settings]
-        extensions.conf => mongodb,asterisk,ast_config  ; map to ast_config record of asterisk database
-        ps_endpoints => mongodb,asterisk                ; ps_endpoints record is in asterisk database
-        ps_auths => mongodb,asterisk                    ; ps_auths record is in asterisk database
-        ps_aors => mongodb,asterisk                     ; ps_aors record is in asterisk database
+
+        ; specify the ps_endpoints source is in asterisk database provided by ast_mongo plugin
+        ; i.e. endpoint => ps_endpoints => asterisk database of mongodb plugin
+        ps_endpoints => mongodb,asterisk
+        ps_auths => mongodb,asterisk
+        ps_aors => mongodb,asterisk
+
+        ; map extensions.conf to ast_config collection of asterisk database
+        extensions.conf => mongodb,asterisk,ast_config 
+        pjsip.conf => mongodb,asterisk,ast_config
 
 - [`cdr_mongodb.conf`](configs/cdr_mongodb.conf) specifies the location, name and collection of database for cdr backend.
 
         [mongodb]
-        uri=mongodb://mongodb.local     ; location of database
+        uri=mongodb://mongodb.local/cdr ; location of database
         database=cdr                    ; name of database
         collection=cdr                  ; name of collection to record cdr data
 
 - [`cel_mongodb.conf`](configs/cel_mongodb.conf) specifies the location, name and collection of database for cel backend.
 
         [mongodb]
-        uri=mongodb://mongodb.local     ; location of database
+        uri=mongodb://mongodb.local/cel ; location of database
         database=cel                    ; name of database
         collection=cel                  ; name of collection to record cel data
 
-## Vagrantfile
-
-The following properties can be configurable with a common file [`config.json`](../config.json);
-
-| Property            |Definition           | Defined | Comments |
-|---------------------|---------------------|---------|----------|
-|[`mongodb`][2]       |version of the module| '3.4'   |          |
-|[`mongo_c_driver`][3]|version of the module| '1.6.0' |          |
-|[`pjsip`][4]         |version of the module| '2.5'   | note: use the pjsip bundled with asterisk if you specify '2.5' or later. |
-|[`asterisk`][1]      |version of Asterisk  | '14.2.1'|          |
-
-## Debug
-
-- add `debug` to [`logger.conf`](configs/logger.conf).
-
-        [logfiles]
-        console => notice,warning,error,debug
-        messages => notice,warning,error,debug
+- See Asterisk's official document [Setting up PJSIP Realtime][5] as well.
 
 ## License and Copyright
 
-- License: GNU GENERAL PUBLIC LICENSE Version 2
+- The related code to Asterisk: 
+    - GNU GENERAL PUBLIC LICENSE Version 2
+- Any other resources and files: 
+    - The MIT License (MIT)
 - Copyright: (C) 2016-17, KINOSHITA minoru, [viktike][9] for cel_mongodb
+
 
 [1]: http://asterisk.org/        "Asterisk"
 [2]: https://mongodb.org/        "MongoDB"
