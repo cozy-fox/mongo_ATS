@@ -48,7 +48,7 @@ if [ -n "$1" ] && [[ $1 =~ ^asterisk|tester$ ]]; then
     docker exec -it $1.local bash
     exit 0
 fi
-if [ -n "$1" ] && [[ $1 =~ ^ast_mongo[1..3]$ ]]; then
+if [ -n "$1" ] && [[ $1 =~ ^ast_mongo[1-3]$ ]]; then
     docker exec -it $1.local mongo
     exit 0
 fi
