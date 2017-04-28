@@ -145,7 +145,7 @@ NETWORK ID          NAME                DRIVER              SCOPE
 
 ## Versioning of Asterisk and its related libraries
 
-You can specify versions of some essential libraries to build to a [`config.json`](../../config.json) file;
+You can specify versions of some essential libraries to build to a [`config.json`](config.json) file;
 
 Property             |Definition           | Comments
 ---------------------|---------------------|----------

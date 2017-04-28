@@ -5,7 +5,7 @@
 #
 PROJECT_ROOT=`pwd`/..
 NETWORK=ast_mongo
-CONFIG_FILE=$PROJECT_ROOT/../config.json
+CONFIG_FILE=./config.json
 MOUNT_POINT=/mnt
 #
 #
