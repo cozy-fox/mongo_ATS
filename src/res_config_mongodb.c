@@ -46,6 +46,13 @@ ASTERISK_REGISTER_FILE()
 #define BSON_UTF8_VALIDATE(utf8,allow_null) \
       bson_utf8_validate (utf8, (int) strlen (utf8), allow_null)
 
+#define LOG_BSON_AS_JSON(level, fmt, bson, ...) { \
+            size_t length;  \
+            char *str = bson_as_json(bson, &length); \
+            ast_log(level, fmt, str, ##__VA_ARGS__); \
+            bson_free(str); \
+        }
+
 static const int MAXTOKENS = 3;
 static const char NAME[] = "mongodb";
 static const char CATEGORY[] = "mongodb";
@@ -174,8 +181,7 @@ static const bson_t* make_condition(const char* sql)
     }
 
     if (condition) {
-        // size_t length;
-        // ast_log(LOG_DEBUG, "generated condition is \"%s\"\n", bson_as_json(condition, &length));
+        // LOG_BSON_AS_JSON(LOG_DEBUG, "generated condition is \"%s\"\n", condition);
     }
     else
         ast_log(LOG_WARNING, "no condition generated\n");
@@ -302,8 +308,7 @@ static bson_t *make_query(const struct ast_variable *fields, const char *orderby
     if (order)
         bson_destroy(order);
     // if (root) {
-    //     size_t length;
-    //  ast_log(LOG_DEBUG, "generated query is %s\n", bson_as_json(root, &length));
+    //     LOG_BSON_AS_JSON(LOG_DEBUG, "generated query is %s\n", root);
     // }
     return root;
 }
@@ -362,8 +367,7 @@ static void model_register(const char *collection, const bson_t *model)
         else if (!BSON_APPEND_DOCUMENT(models, collection, model))
             ast_log(LOG_ERROR, "cannot register %s\n", collection);
         else {
-            size_t length;
-            ast_log(LOG_DEBUG, "models is \"%s\"\n", bson_as_json(models, &length));
+            LOG_BSON_AS_JSON(LOG_DEBUG, "models is \"%s\"\n", models);
         }
     } while(0);
     ast_mutex_unlock(&model_lock);
@@ -439,16 +443,12 @@ static struct ast_variable *realtime(const char *database, const char *table, co
             ast_log(LOG_ERROR, "cannot make a query to find\n");
             break;
         }
-        {
-            size_t length;
-            ast_log(LOG_DEBUG, "database=%s, table=%s, query=%s\n", database, table, bson_as_json(query, &length));
-        }
+        LOG_BSON_AS_JSON(LOG_DEBUG, "query=%s, database=%s, table=%s\n", query, database, table);
 
         collection = mongoc_client_get_collection(dbclient, database, table);
         cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0, query, NULL, NULL);
         if (!cursor) {
-            size_t length;
-            ast_log(LOG_ERROR, "query failed with database=%s, table=%s, query=%s\n", database, table, bson_as_json(query, &length));
+            LOG_BSON_AS_JSON(LOG_ERROR, "query failed with query=%s, database=%s, table=%s\n", query, database, table);
             break;
         }
         if (mongoc_cursor_next(cursor, &doc)) {
@@ -458,10 +458,8 @@ static struct ast_variable *realtime(const char *database, const char *table, co
             char work[128];
             struct ast_variable *prev = NULL;
 
-            {
-                size_t length;
-                ast_log(LOG_DEBUG, "query found %s\n", bson_as_json(doc, &length));
-            }
+            LOG_BSON_AS_JSON(LOG_DEBUG, "query found %s\n", doc);
+
             if (!bson_iter_init(&iter, doc)) {
                 ast_log(LOG_ERROR, "unexpected bson error!\n");
                 break;
@@ -581,14 +579,12 @@ static struct ast_config* realtime_multi(const char *database, const char *table
         }
 
         collection = mongoc_client_get_collection(dbclient, database, table);
-        {
-            size_t length;
-            ast_log(LOG_DEBUG, "database=%s, table=%s, query=%s\n", database, table, bson_as_json(query, &length));
-        }
+
+        LOG_BSON_AS_JSON(LOG_DEBUG, "query=%s, database=%s, table=%s\n", query, database, table);
+
         cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
         if (!cursor) {
-            size_t length;
-            ast_log(LOG_ERROR, "query failed with database=%s, table=%s, query=%s\n", database, table, bson_as_json(query, &length));
+            LOG_BSON_AS_JSON(LOG_ERROR, "query failed with query=%s, database=%s, table=%s\n", query, database, table);
             break;
         }
 
@@ -598,10 +594,8 @@ static struct ast_config* realtime_multi(const char *database, const char *table
             const char* value;
             char work[128];
 
-            {
-                size_t length;
-                ast_log(LOG_DEBUG, "query found %s\n", bson_as_json(doc, &length));
-            }
+            LOG_BSON_AS_JSON(LOG_DEBUG, "query found %s\n", doc);
+
             if (!bson_iter_init(&iter, doc)) {
                 ast_log(LOG_ERROR, "unexpected bson error!\n");
                 break;
@@ -766,15 +760,14 @@ static int update(const char *database, const char *table, const char *keyfield,
                     database, table, keyfield, lookup);
             break;
         }
-        {
-            size_t length;
-            ast_log(LOG_DEBUG, "query=%s, update=%s\n", 
-                bson_as_json(query, &length), bson_as_json(update, &length));
-        }
+
+        LOG_BSON_AS_JSON(LOG_DEBUG, "query=%s\n", query);
+        LOG_BSON_AS_JSON(LOG_DEBUG, "update=%s\n", update);
+
         if (!mongoc_collection_update(collection, MONGOC_UPDATE_NONE, query, update, NULL, &error)) {
-            size_t length;
-            ast_log(LOG_ERROR, "update failed, query=%s, update=%s, error=%s\n", 
-                bson_as_json(query, &length), bson_as_json(update, &length), error.message);
+            ast_log(LOG_ERROR, "update failed, error=%s\n", error.message);
+            LOG_BSON_AS_JSON(LOG_ERROR, "query=%s\n", query);
+            LOG_BSON_AS_JSON(LOG_ERROR, "update=%s\n", update);
             break;
         }
 
@@ -810,10 +803,8 @@ static int require(const char *database, const char *table, va_list ap)
         // ast_log(LOG_DEBUG, "elm=%s, type=%d, size=%d\n", elm, type, size);
         BSON_APPEND_INT64(model, elm, rtype2btype(type));
     }
-    {
-        size_t length;
-        ast_log(LOG_DEBUG, "required model is \"%s\"\n", bson_as_json(model, &length));
-    }
+    LOG_BSON_AS_JSON(LOG_DEBUG, "required model is \"%s\"\n", model);
+
     model_register(table, model);
     bson_destroy(model);
     return 0;
@@ -936,18 +927,15 @@ static struct ast_config *load(
                             "category", BCON_DOUBLE(1),
                             "var_name", BCON_DOUBLE(1),
                             "var_val", BCON_DOUBLE(1));
-        {
-            size_t length;
-            ast_log(LOG_DEBUG, "query=%s\n", bson_as_json(root, &length));
-            // ast_log(LOG_DEBUG, "fields=%s\n", bson_as_json(fields, &length));
-        }
+
+        LOG_BSON_AS_JSON(LOG_DEBUG, "query=%s\n", root);
+        // LOG_BSON_AS_JSON(LOG_DEBUG, "fields=%s\n", fields);
 
         collection = mongoc_client_get_collection(dbclient, database, table);
         cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 0, 0, root, fields, NULL);
         if (!cursor) {
-            size_t length;
-            ast_log(LOG_ERROR, "query failed with query=%s, fields=%s\n", 
-                bson_as_json(root, &length), bson_as_json(fields, &length));
+            LOG_BSON_AS_JSON(LOG_ERROR, "query failed with query=%s\n", root);
+            LOG_BSON_AS_JSON(LOG_ERROR, "query failed with fields=%s\n", fields);
             break;
         }
 
@@ -961,10 +949,7 @@ static struct ast_config *load(
             int cat_metric;
             uint32_t length;
 
-            {
-                size_t length;
-                ast_log(LOG_DEBUG, "query found %s\n", bson_as_json(doc, &length));
-            }
+            LOG_BSON_AS_JSON(LOG_DEBUG, "query found %s\n", doc);
 
             if (!bson_iter_init(&iter, doc)) {
                 ast_log(LOG_ERROR, "unexpected bson error!\n");

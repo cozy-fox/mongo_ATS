@@ -20,7 +20,7 @@ index e5413f1..f214f9f 100644
  NETSNMP=@PBX_NETSNMP@
 diff --git a/cdr/cdr_mongodb.c b/cdr/cdr_mongodb.c
 new file mode 100644
-index 0000000..227a914
+index 0000000..9ba5ecd
 --- /dev/null
 +++ b/cdr/cdr_mongodb.c
 @@ -0,0 +1,267 @@
@@ -61,7 +61,7 @@ index 0000000..227a914
 +
 +#include "asterisk.h"
 +
-+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
++ASTERISK_REGISTER_FILE()
 +
 +#include "asterisk/config.h"
 +#include "asterisk/channel.h"
@@ -291,8 +291,312 @@ index 0000000..227a914
 +    .reload = reload,
 +    .load_pri = AST_MODPRI_CDR_DRIVER,
 +);
+diff --git a/cel/cel_mongodb.c b/cel/cel_mongodb.c
+new file mode 100644
+index 0000000..7fd3306
+--- /dev/null
++++ b/cel/cel_mongodb.c
+@@ -0,0 +1,298 @@
++ /*
++  * Asterisk -- An open source telephony toolkit.
++  *
++  * Copyright (C) 2015 Catalin [catacs] Stanciu <catacsdev@gmail.com>
++  *
++  * Catalin Stanciu - adapted to MongoDB backend, from:
++  * Steve Murphy <murf@digium.com>
++  * Adapted from the PostgreSQL CEL logger
++  *
++  *
++  * Modified March 2016
++  * Catalin Stanciu <catacsdev@gmail.com>
++  *
++  * See http://www.asterisk.org for more information about
++  * the Asterisk project. Please do not directly contact
++  * any of the maintainers of this project for assistance;
++  * the project provides a web site, mailing lists and IRC
++  * channels for your use.
++  *
++  * This program is free software, distributed under the terms of
++  * the GNU General Public License Version 2. See the LICENSE file
++  * at the top of the source tree.
++  */
++
++ /*! \file
++  *
++  * \brief MongoDB CEL logger
++  *
++  * \author Catalin Stanciu <catacsdev@gmail.com>
++  * MongoDB https://www.mongodb.org/
++  *
++  * See also
++  * \arg \ref Config_cel
++  * MongoDB https://www.mongodb.org/
++  * \ingroup cel_drivers
++  */
++
++/*** MODULEINFO
++    <depend>res_mongodb</depend>
++    <depend>mongoc</depend>
++    <depend>bson</depend>
++    <support_level>extended</support_level>
++ ***/
++
++#include "asterisk.h"
++ASTERISK_REGISTER_FILE()
++
++#include "asterisk/config.h"
++#include "asterisk/options.h"
++#include "asterisk/channel.h"
++#include "asterisk/cel.h"
++#include "asterisk/module.h"
++#include "asterisk/logger.h"
++#include "asterisk/res_mongodb.h"
++
++// #define DATE_FORMAT "%Y-%m-%d %T.%6q"
++
++static const char NAME[] = "cel_mongodb";
++static const char CATEGORY[] = "mongodb";
++static const char URI[] = "uri";
++static const char DATABSE[] = "database";
++static const char COLLECTION[] = "collection";
++static const char SERVERID[] = "serverid";
++static const char CONFIG_FILE[] = "cel_mongodb.conf";
++
++enum {
++    CONFIG_REGISTERED = 1 << 0,
++};
++
++static struct ast_flags config = { 0 };
++static char *dbname = NULL;
++static char *dbcollection = NULL;
++static mongoc_client_pool_t *dbpool = NULL;
++static bson_oid_t *serverid = NULL;
++
++static void mongodb_log(struct ast_event *event)
++{
++    bson_t *doc = NULL;
++    mongoc_collection_t *collection = NULL;
++    const char *name;
++//    struct ast_tm tm;
++//    char timestr[128];
++
++    if(dbpool == NULL) {
++        ast_log(LOG_ERROR, "unexpected error, no connection pool\n");
++        return;
++    }
++
++    mongoc_client_t *dbclient = mongoc_client_pool_pop(dbpool);
++    if(dbclient == NULL) {
++        ast_log(LOG_ERROR, "unexpected error, no client allocated\n");
++        return;
++    }
++
++    struct ast_cel_event_record record = {
++    	.version = AST_CEL_EVENT_RECORD_VERSION,
++    };
++
++    if (ast_cel_fill_record(event, &record)) {
++        ast_log(LOG_ERROR, "unexpected error, failed to extract event data\n");    	    
++	return;
++    }
++    /* Handle user define events */
++    name = record.event_name;
++    if (record.event_type == AST_CEL_USER_DEFINED) {
++	name = record.user_defined_name;
++    }
++    
++//  ast_localtime(&record.event_time, &tm, NULL);
++//  ast_strftime(timestr, sizeof(timestr), DATE_FORMAT, &tm);
++    
++    do {
++        bson_error_t error;
++
++        doc = bson_new();
++        if(doc == NULL) {
++            ast_log(LOG_ERROR, "cannot make a document\n");
++            break;
++        }
++        mongoc_collection_t *collection = mongoc_client_get_collection(dbclient, dbname, dbcollection);
++        if(collection == NULL) {
++            ast_log(LOG_ERROR, "cannot get such a collection, %s, %s\n", dbname, dbcollection);
++            break;
++        }
++        BSON_APPEND_INT32(doc, "eventtype", record.event_type);
++        BSON_APPEND_UTF8(doc, "eventname", name);
++        BSON_APPEND_UTF8(doc, "cid_name", record.caller_id_name);
++        BSON_APPEND_UTF8(doc, "cid_num", record.caller_id_num);
++        BSON_APPEND_UTF8(doc, "cid_ani", record.caller_id_ani);
++        BSON_APPEND_UTF8(doc, "cid_rdnis", record.caller_id_rdnis);
++        BSON_APPEND_UTF8(doc, "cid_dnid", record.caller_id_dnid);
++        BSON_APPEND_UTF8(doc, "exten", record.extension);
++        BSON_APPEND_UTF8(doc, "context", record.context);
++        BSON_APPEND_UTF8(doc, "channame", record.channel_name);
++        BSON_APPEND_UTF8(doc, "appname", record.application_name);
++        BSON_APPEND_UTF8(doc, "appdata", record.application_data);
++        BSON_APPEND_UTF8(doc, "accountcode", record.account_code);
++        BSON_APPEND_UTF8(doc, "peeraccount", record.peer_account);
++        BSON_APPEND_UTF8(doc, "uniqueid", record.unique_id);
++        BSON_APPEND_UTF8(doc, "linkedid", record.linked_id);
++        BSON_APPEND_UTF8(doc, "userfield", record.user_field);
++        BSON_APPEND_UTF8(doc, "peer", record.peer);
++        BSON_APPEND_UTF8(doc, "extra", record.extra);
++        BSON_APPEND_TIMEVAL(doc, "eventtime", &record.event_time);
++        if (serverid)
++            BSON_APPEND_OID(doc, SERVERID, serverid);
++
++        if(!mongoc_collection_insert(collection, MONGOC_INSERT_NONE, doc, NULL, &error))
++            ast_log(LOG_ERROR, "insertion failed, %s\n", error.message);
++
++    } while(0);
++
++    if (collection)
++        mongoc_collection_destroy(collection);
++    if (doc)
++        bson_destroy(doc);
++    mongoc_client_pool_push(dbpool, dbclient);
++    return;
++}
++
++static int _load_module(int reload)
++{
++    int res = -1;
++    struct ast_config *cfg = NULL;
++    mongoc_uri_t *uri = NULL;
++
++    do {
++        const char *tmp;
++        struct ast_variable *var;
++        struct ast_flags config_flags = { reload ? CONFIG_FLAG_FILEUNCHANGED : 0 };
++
++        cfg = ast_config_load(CONFIG_FILE, config_flags);
++        if (!cfg || cfg == CONFIG_STATUS_FILEINVALID) {
++            ast_log(LOG_WARNING, "unable to load config file=%s\n", CONFIG_FILE);
++            res = AST_MODULE_LOAD_DECLINE;
++            break;
++        } 
++        else if (cfg == CONFIG_STATUS_FILEUNCHANGED)
++            break;
++
++        var = ast_variable_browse(cfg, CATEGORY);
++        if (!var) {
++            ast_log(LOG_WARNING, "no category specified.\n");
++            break;
++        }
++
++        if ((tmp = ast_variable_retrieve(cfg, CATEGORY, URI)) == NULL) {
++            ast_log(LOG_WARNING, "no uri specified.\n");
++            break;
++        }
++        uri = mongoc_uri_new(tmp);
++        if (uri == NULL) {
++            ast_log(LOG_ERROR, "parsing uri error, %s\n", tmp);
++            break;
++        }
++
++        if ((tmp = ast_variable_retrieve(cfg, CATEGORY, DATABSE)) == NULL) {
++            ast_log(LOG_WARNING, "no database specified.\n");
++            break;
++        }
++        if (dbname)
++            ast_free(dbname);
++        dbname = ast_strdup(tmp);
++        if (dbname == NULL) {
++            ast_log(LOG_ERROR, "not enough memory for dbname\n");
++            break;
++        }
++
++        if ((tmp = ast_variable_retrieve(cfg, CATEGORY, COLLECTION)) == NULL) {
++            ast_log(LOG_WARNING, "no collection specified.\n");
++            break;
++        }
++        if (dbcollection)
++            ast_free(dbcollection);
++        dbcollection = ast_strdup(tmp);
++        if (dbcollection == NULL) {
++            ast_log(LOG_ERROR, "not enough memory for dbcollection\n");
++            break;
++        }
++
++        if (ast_test_flag(&config, CONFIG_REGISTERED)){
++            ast_cel_backend_unregister(NAME);
++            ast_clear_flag(&config, CONFIG_REGISTERED);
++        }
++        
++        if (!ast_test_flag(&config, CONFIG_REGISTERED)) {
++            res = ast_cel_backend_register(NAME, mongodb_log);
++            if (res) {
++                ast_log(LOG_ERROR, "unable to register CEL handling\n");
++                break;
++            }
++            ast_set_flag(&config, CONFIG_REGISTERED);
++        }
++
++        if ((tmp = ast_variable_retrieve(cfg, CATEGORY, SERVERID)) != NULL) {
++            if (!bson_oid_is_valid (tmp, strlen(tmp))) {
++                ast_log(LOG_ERROR, "invalid server id specified.\n");
++                break;
++            }
++            serverid = ast_malloc(sizeof(bson_oid_t));
++            if (serverid == NULL) {
++                ast_log(LOG_ERROR, "not enough memory\n");
++                break;
++            }
++            bson_oid_init_from_string(serverid, tmp);
++        }
++
++        if (dbpool)
++            mongoc_client_pool_destroy(dbpool);
++        dbpool = mongoc_client_pool_new(uri);
++        if (dbpool == NULL) {
++            ast_log(LOG_ERROR, "cannot make a connection pool for MongoDB\n");
++            break;
++        }
++
++        res = 0; // suceess
++    } while (0);
++
++    if (uri)
++       mongoc_uri_destroy(uri);
++        
++    if (cfg && cfg != CONFIG_STATUS_FILEUNCHANGED && cfg != CONFIG_STATUS_FILEINVALID)
++        ast_config_destroy(cfg);        
++
++    return res;
++}
++
++static int load_module(void)
++{
++	return _load_module(0);
++}
++
++static int unload_module(void)
++{
++    if (ast_cel_backend_unregister(NAME))
++        return -1;
++    if (dbname)
++        ast_free(dbname);
++    if (dbcollection)
++        ast_free(dbcollection);
++    if (dbpool)
++        mongoc_client_pool_destroy(dbpool);
++    return 0;
++}
++
++static int reload(void)
++{
++	int res;
++	res = _load_module(1);	
++	return res;
++}
++
++AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "MongoDB CEL Backend",
++	.support_level = AST_MODULE_SUPPORT_EXTENDED,
++	.load = load_module,
++	.unload = unload_module,
++	.reload = reload,
++);
 diff --git a/configure.ac b/configure.ac
-index 637059c..813e7ef 100644
+index 637059c..c42a303 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -539,6 +539,8 @@ AST_EXT_LIB_SETUP([TIMERFD], [timerfd], [timerfd])
@@ -310,7 +614,7 @@ index 637059c..813e7ef 100644
  
 +AST_EXT_LIB_CHECK([BSON], [bson-1.0], [bson_init], [libbson-1.0/bson.h], [], [-I/usr/local/include/libbson-1.0])
 +
-+AST_EXT_LIB_CHECK([MONGOC], [mongoc-1.0], [mongoc_init], [libmongoc-1.0/mongoc.h], [], [-I/usr/local/include/libbson-1.0])
++AST_EXT_LIB_CHECK([MONGOC], [mongoc-1.0], [mongoc_init], [libmongoc-1.0/mongoc.h], [], [-I/usr/local/include/libbson-1.0 -I/usr/local/include/libmongoc-1.0])
 +
  AST_EXT_LIB_CHECK([OGG], [ogg], [ogg_sync_init], [])
  
@@ -359,10 +663,10 @@ index 9fa49bc..d9688da 100644
  
 diff --git a/res/res_config_mongodb.c b/res/res_config_mongodb.c
 new file mode 100644
-index 0000000..fa399e5
+index 0000000..ae56a33
 --- /dev/null
 +++ b/res/res_config_mongodb.c
-@@ -0,0 +1,1177 @@
+@@ -0,0 +1,1162 @@
 +/*
 + * MongoDB configuration engine
 + *
@@ -396,7 +700,7 @@ index 0000000..fa399e5
 +
 +#include "asterisk.h"
 +
-+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
++ASTERISK_REGISTER_FILE()
 +
 +#include "asterisk/file.h"
 +#include "asterisk/channel.h"
@@ -410,6 +714,13 @@ index 0000000..fa399e5
 +
 +#define BSON_UTF8_VALIDATE(utf8,allow_null) \
 +      bson_utf8_validate (utf8, (int) strlen (utf8), allow_null)
++
++#define LOG_BSON_AS_JSON(level, fmt, bson, ...) { \
++            size_t length;  \
++            char *str = bson_as_json(bson, &length); \
++            ast_log(level, fmt, str, ##__VA_ARGS__); \
++            bson_free(str); \
++        }
 +
 +static const int MAXTOKENS = 3;
 +static const char NAME[] = "mongodb";
@@ -510,11 +821,11 @@ index 0000000..fa399e5
 +    char tail = *(sql + strlen(sql) - 1);
 +
 +    if (strcmp(sql, "%") == 0) {
-+        const char* json = "{ \"$exists\": true, \"$not\": {\"$size\": 0}} }";
++        const char* json = "{ \"$exists\": true, \"$not\": {\"$size\": 0}}";
 +        bson_error_t error;
 +        condition = bson_new_from_json((const uint8_t*)json, -1, &error);
 +        if (!condition)
-+            ast_log(LOG_ERROR, "cannot generated condition from \"%s\"\n", json);
++            ast_log(LOG_ERROR, "cannot generated condition from \"%s\", %d.%d:%s\n", json, error.domain, error.code, error.message);
 +    }
 +    else if (head == '%' && tail == '%') {
 +        strcopy(sql+1, patern, sizeof(patern)-1);
@@ -539,8 +850,7 @@ index 0000000..fa399e5
 +    }
 +
 +    if (condition) {
-+        // size_t length;
-+        // ast_log(LOG_DEBUG, "generated condition is \"%s\"\n", bson_as_json(condition, &length));
++        // LOG_BSON_AS_JSON(LOG_DEBUG, "generated condition is \"%s\"\n", condition);
 +    }
 +    else
 +        ast_log(LOG_WARNING, "no condition generated\n");
@@ -667,8 +977,7 @@ index 0000000..fa399e5
 +    if (order)
 +        bson_destroy(order);
 +    // if (root) {
-+    //     size_t length;
-+    //  ast_log(LOG_DEBUG, "generated query is %s\n", bson_as_json(root, &length));
++    //     LOG_BSON_AS_JSON(LOG_DEBUG, "generated query is %s\n", root);
 +    // }
 +    return root;
 +}
@@ -727,8 +1036,7 @@ index 0000000..fa399e5
 +        else if (!BSON_APPEND_DOCUMENT(models, collection, model))
 +            ast_log(LOG_ERROR, "cannot register %s\n", collection);
 +        else {
-+            size_t length;
-+            ast_log(LOG_DEBUG, "models is \"%s\"\n", bson_as_json(models, &length));
++            LOG_BSON_AS_JSON(LOG_DEBUG, "models is \"%s\"\n", models);
 +        }
 +    } while(0);
 +    ast_mutex_unlock(&model_lock);
@@ -804,16 +1112,12 @@ index 0000000..fa399e5
 +            ast_log(LOG_ERROR, "cannot make a query to find\n");
 +            break;
 +        }
-+        {
-+            size_t length;
-+            ast_log(LOG_DEBUG, "database=%s, table=%s, query=%s\n", database, table, bson_as_json(query, &length));
-+        }
++        LOG_BSON_AS_JSON(LOG_DEBUG, "query=%s, database=%s, table=%s\n", query, database, table);
 +
 +        collection = mongoc_client_get_collection(dbclient, database, table);
 +        cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0, query, NULL, NULL);
 +        if (!cursor) {
-+            size_t length;
-+            ast_log(LOG_ERROR, "query failed with database=%s, table=%s, query=%s\n", database, table, bson_as_json(query, &length));
++            LOG_BSON_AS_JSON(LOG_ERROR, "query failed with query=%s, database=%s, table=%s\n", query, database, table);
 +            break;
 +        }
 +        if (mongoc_cursor_next(cursor, &doc)) {
@@ -823,10 +1127,8 @@ index 0000000..fa399e5
 +            char work[128];
 +            struct ast_variable *prev = NULL;
 +
-+            {
-+                size_t length;
-+                ast_log(LOG_DEBUG, "query found %s\n", bson_as_json(doc, &length));
-+            }
++            LOG_BSON_AS_JSON(LOG_DEBUG, "query found %s\n", doc);
++
 +            if (!bson_iter_init(&iter, doc)) {
 +                ast_log(LOG_ERROR, "unexpected bson error!\n");
 +                break;
@@ -946,14 +1248,12 @@ index 0000000..fa399e5
 +        }
 +
 +        collection = mongoc_client_get_collection(dbclient, database, table);
-+        {
-+            size_t length;
-+            ast_log(LOG_DEBUG, "database=%s, table=%s, query=%s\n", database, table, bson_as_json(query, &length));
-+        }
++
++        LOG_BSON_AS_JSON(LOG_DEBUG, "query=%s, database=%s, table=%s\n", query, database, table);
++
 +        cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
 +        if (!cursor) {
-+            size_t length;
-+            ast_log(LOG_ERROR, "query failed with database=%s, table=%s, query=%s\n", database, table, bson_as_json(query, &length));
++            LOG_BSON_AS_JSON(LOG_ERROR, "query failed with query=%s, database=%s, table=%s\n", query, database, table);
 +            break;
 +        }
 +
@@ -963,10 +1263,8 @@ index 0000000..fa399e5
 +            const char* value;
 +            char work[128];
 +
-+            {
-+                size_t length;
-+                ast_log(LOG_DEBUG, "query found %s\n", bson_as_json(doc, &length));
-+            }
++            LOG_BSON_AS_JSON(LOG_DEBUG, "query found %s\n", doc);
++
 +            if (!bson_iter_init(&iter, doc)) {
 +                ast_log(LOG_ERROR, "unexpected bson error!\n");
 +                break;
@@ -1131,15 +1429,14 @@ index 0000000..fa399e5
 +                    database, table, keyfield, lookup);
 +            break;
 +        }
-+        {
-+            size_t length;
-+            ast_log(LOG_DEBUG, "query=%s, update=%s\n", 
-+                bson_as_json(query, &length), bson_as_json(update, &length));
-+        }
++
++        LOG_BSON_AS_JSON(LOG_DEBUG, "query=%s\n", query);
++        LOG_BSON_AS_JSON(LOG_DEBUG, "update=%s\n", update);
++
 +        if (!mongoc_collection_update(collection, MONGOC_UPDATE_NONE, query, update, NULL, &error)) {
-+            size_t length;
-+            ast_log(LOG_ERROR, "update failed, query=%s, update=%s, error=%s\n", 
-+                bson_as_json(query, &length), bson_as_json(update, &length), error.message);
++            ast_log(LOG_ERROR, "update failed, error=%s\n", error.message);
++            LOG_BSON_AS_JSON(LOG_ERROR, "query=%s\n", query);
++            LOG_BSON_AS_JSON(LOG_ERROR, "update=%s\n", update);
 +            break;
 +        }
 +
@@ -1175,10 +1472,8 @@ index 0000000..fa399e5
 +        // ast_log(LOG_DEBUG, "elm=%s, type=%d, size=%d\n", elm, type, size);
 +        BSON_APPEND_INT64(model, elm, rtype2btype(type));
 +    }
-+    {
-+        size_t length;
-+        ast_log(LOG_DEBUG, "required model is \"%s\"\n", bson_as_json(model, &length));
-+    }
++    LOG_BSON_AS_JSON(LOG_DEBUG, "required model is \"%s\"\n", model);
++
 +    model_register(table, model);
 +    bson_destroy(model);
 +    return 0;
@@ -1301,18 +1596,15 @@ index 0000000..fa399e5
 +                            "category", BCON_DOUBLE(1),
 +                            "var_name", BCON_DOUBLE(1),
 +                            "var_val", BCON_DOUBLE(1));
-+        {
-+            size_t length;
-+            ast_log(LOG_DEBUG, "query=%s\n", bson_as_json(root, &length));
-+            // ast_log(LOG_DEBUG, "fields=%s\n", bson_as_json(fields, &length));
-+        }
++
++        LOG_BSON_AS_JSON(LOG_DEBUG, "query=%s\n", root);
++        // LOG_BSON_AS_JSON(LOG_DEBUG, "fields=%s\n", fields);
 +
 +        collection = mongoc_client_get_collection(dbclient, database, table);
 +        cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 0, 0, root, fields, NULL);
 +        if (!cursor) {
-+            size_t length;
-+            ast_log(LOG_ERROR, "query failed with query=%s, fields=%s\n", 
-+                bson_as_json(root, &length), bson_as_json(fields, &length));
++            LOG_BSON_AS_JSON(LOG_ERROR, "query failed with query=%s\n", root);
++            LOG_BSON_AS_JSON(LOG_ERROR, "query failed with fields=%s\n", fields);
 +            break;
 +        }
 +
@@ -1326,10 +1618,7 @@ index 0000000..fa399e5
 +            int cat_metric;
 +            uint32_t length;
 +
-+            {
-+                size_t length;
-+                ast_log(LOG_DEBUG, "query found %s\n", bson_as_json(doc, &length));
-+            }
++            LOG_BSON_AS_JSON(LOG_DEBUG, "query found %s\n", doc);
 +
 +            if (!bson_iter_init(&iter, doc)) {
 +                ast_log(LOG_ERROR, "unexpected bson error!\n");
@@ -1542,7 +1831,7 @@ index 0000000..fa399e5
 +);
 diff --git a/res/res_mongodb.c b/res/res_mongodb.c
 new file mode 100644
-index 0000000..8457adb
+index 0000000..598d36f
 --- /dev/null
 +++ b/res/res_mongodb.c
 @@ -0,0 +1,99 @@
@@ -1579,7 +1868,7 @@ index 0000000..8457adb
 +
 +#include "asterisk.h"
 +
-+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
++ASTERISK_REGISTER_FILE()
 +
 +#include "asterisk/module.h"
 +#include "asterisk/res_mongodb.h"
