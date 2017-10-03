@@ -137,6 +137,6 @@ describe('A PJSIP UAS managed by res_config_mongodb', function()
     afterEach(function() {
         setTimeout(function() {
             done();
-        }, 1000);
+        }, 3000);
     })
 });

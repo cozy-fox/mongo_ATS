@@ -1,2 +1,4 @@
 .vagrant
 node_modules
+
+test_bench/configs/logger.conf

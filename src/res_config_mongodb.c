@@ -30,8 +30,9 @@
  ***/
 
 #include "asterisk.h"
-
+#ifdef ASTERISK_REGISTER_FILE   /* deprecated from 15.0.0 */
 ASTERISK_REGISTER_FILE()
+#endif
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"

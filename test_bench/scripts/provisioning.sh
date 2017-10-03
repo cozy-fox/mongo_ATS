@@ -91,7 +91,7 @@ if true ; then
         cd $HOME/asterisk-$VERSION_ASTERISK
         ##  patch for configure.ac makeopts.in build_tools/menuselect-deps.in
         ##  which was generated with 'git diff configure.ac makeopts.in build_tools/menuselect-deps.in'
-        patch -p1 -i $MOUNT_POINT/src/mongodb.for.asterisk.patch
+        patch -p1 -F3 -i $MOUNT_POINT/src/mongodb.for.asterisk.patch
     else
         cd $HOME/asterisk-$VERSION_ASTERISK/cdr
         cp $MOUNT_POINT/src/cdr_mongodb.c .
@@ -110,12 +110,12 @@ if true ; then
         cd $HOME/asterisk-$VERSION_ASTERISK
         ##  patch for configure.ac makeopts.in build_tools/menuselect-deps.in
         ##  which was generated with 'git diff configure.ac makeopts.in build_tools/menuselect-deps.in'
-        patch -p1 -i $MOUNT_POINT/src/mongodb.for.asterisk.patch
+        patch -p1 -F3 -i $MOUNT_POINT/src/mongodb.for.asterisk.patch
         mkdir -p $MOUNT_POINT/patches
         git diff HEAD > $MOUNT_POINT/patches/ast_mongo-$VERSION_ASTERISK.patch
     fi
 else
-    patch -p1 -i $MOUNT_POINT/patches/ast_mongo-$VERSION_ASTERISK.patch
+    patch -p1 -F3 -i $MOUNT_POINT/patches/ast_mongo-$VERSION_ASTERISK.patch
 fi
 
 ## reconfigure
