@@ -15,7 +15,7 @@
  * \ingroup resources
  *
  * Depends on the MongoDB library - https://www.mongodb.org
- * 
+ *
  */
 
 /*! \li \ref res_config_mongodb.c uses the configuration file \ref res_config_mongodb.conf
@@ -44,6 +44,7 @@ ASTERISK_REGISTER_FILE()
 #include "asterisk/threadstorage.h"
 #include "asterisk/res_mongodb.h"
 
+#define HANDLE_ID_AS_OID 1
 #define BSON_UTF8_VALIDATE(utf8,allow_null) \
       bson_utf8_validate (utf8, (int) strlen (utf8), allow_null)
 
@@ -56,23 +57,25 @@ ASTERISK_REGISTER_FILE()
 
 static const int MAXTOKENS = 3;
 static const char NAME[] = "mongodb";
-static const char CATEGORY[] = "mongodb";
-static const char CONFIG_FILE[] = "res_config_mongodb.conf";
+static const char CATEGORY[] = "config";
+static const char CONFIG_FILE[] = "ast_mongo.conf";
 static const char SERVERID[] = "serverid";
 
 AST_MUTEX_DEFINE_STATIC(model_lock);
 static mongoc_client_pool_t* dbpool = NULL;
 static bson_t* models = NULL;
 static bson_oid_t *serverid = NULL;
+static void* apm_context = NULL;
+static int apm_enabled = 0;
 
 static int str_split(char* str, const char* delim, const char* tokens[] ) {
     char* token;
     char* saveptr;
     int count = 0;
 
-    for(token = strtok_r(str, delim, &saveptr); 
-        token && count < MAXTOKENS; 
-        token = strtok_r(NULL, delim, &saveptr), count++) 
+    for(token = strtok_r(str, delim, &saveptr);
+        token && count < MAXTOKENS;
+        token = strtok_r(NULL, delim, &saveptr), count++)
     {
         tokens[count] = token;
     }
@@ -89,21 +92,72 @@ static const char *key_asterisk2mongo(const char *key)
     return strcmp(key, "id") == 0 ? "_id" : key;
 }
 
-/*! 
+/*!
  *  check if the specified string is integer
  *
+ *  \param[in] value
+ *  \param[out] result
  *  \retval true if it's an integer
  */
-static int is_integer(const char* pstr)
+static bool is_integer(const char* value, long long* result)
 {
-    size_t span = strspn(pstr, "0123456789");
-    return span && pstr[span] == '\0';
+    int len;
+    long long dummy;
+    long long* p = result ? result : &dummy;
+
+    if (sscanf(value, "%Ld%n", p, &len) == 0)
+        return false;
+    if (value[len] != '\0')
+        return false;
+    return true;
 }
 
-/*! 
+/*!
+ *  check if the specified string is real number
+ *
+ *  \param[in] value
+ *  \param[out] result
+ *  \retval true if it's a real number
+ */
+static bool is_real(const char* value, double* result)
+{
+    int len;
+    double dummy;
+    double* p = result ? result : &dummy;
+
+    if (sscanf(value, "%lg%n", p, &len) == 0)
+        return false;
+    if (value[len] != '\0')
+        return false;
+    return true;
+}
+
+/*!
+ *  check if the specified string is bool
+ *
+ *  \param[in] value
+ *  \param[out] result
+ *  \retval true if it's a real number
+ */
+static bool is_bool(const char* value, bool* result) {
+    bool dummy;
+    bool* p = result ? result : &dummy;
+
+    if (strcmp(value, "true") == 0) {
+        *p = true;
+        return true;
+    }
+    if (strcmp(value, "false") == 0) {
+        *p = false;
+        return true;
+    }
+    return false;
+}
+
+/*!
  *  assume the specified src doesn't have any escaping letters for mongo such as \, ', ".
  *
- *  \retval a pointer same as dst. 
+ *  \retval a pointer same as dst.
  */
 static const char* strcopy(const char* src, char* dst, int size)
 {
@@ -132,7 +186,7 @@ static const char* strcopy(const char* src, char* dst, int size)
     return (const char*)dst;
 }
 
-/*! 
+/*!
  * \brief   make a condition to query
  * \param   sql     is pattern for sql
  * \retval  a bson to query as follows;
@@ -214,6 +268,7 @@ static bson_t *make_query(const struct ast_variable *fields, const char *orderby
             const char *tokens[MAXTOKENS];
             char buf[1024];
             int count;
+            long long ll_number;
 
             if (strlen(fields->name) >= (sizeof(buf) - 1)) {
                 ast_log(LOG_WARNING, "too long key, \"%s\".\n", fields->name);
@@ -225,7 +280,16 @@ static bson_t *make_query(const struct ast_variable *fields, const char *orderby
 
             switch(count) {
                 case 1:
-                    err = !BSON_APPEND_UTF8(query, key_asterisk2mongo(fields->name), fields->value);
+#ifdef HANDLE_ID_AS_OID
+                    if ((strcmp(fields->name, "id") == 0)
+                    &&  bson_oid_is_valid(fields->value, strlen(fields->value))) {
+                        bson_oid_t oid;
+                        bson_oid_init_from_string(&oid, fields->value);
+                        err = !BSON_APPEND_OID(query, "_id", &oid);
+                    }
+                    else
+#endif
+                        err = !BSON_APPEND_UTF8(query, key_asterisk2mongo(fields->name), fields->value);
                     break;
                 case 2:
                     if (!strcasecmp(tokens[1], "LIKE")) {
@@ -234,8 +298,8 @@ static bson_t *make_query(const struct ast_variable *fields, const char *orderby
                     else if (!strcasecmp(tokens[1], "!=")) {
                         // {
                         //     tokens[0]: {
-                        //         "$exists" : true, 
-                        //         "$ne" : value 
+                        //         "$exists" : true,
+                        //         "$ne" : value
                         //     }
                         // }
                         condition = BCON_NEW(
@@ -246,30 +310,24 @@ static bson_t *make_query(const struct ast_variable *fields, const char *orderby
                     else if (!strcasecmp(tokens[1], ">")) {
                         // {
                         //     tokens[0]: {
-                        //         "$gt" : value 
+                        //         "$gt" : value
                         //     }
                         // }
-                        if (is_integer(fields->value)) {
-                            int32_t number = atoi(fields->value);
-                            condition = BCON_NEW("$gt", BCON_INT32(number));
-                        }
-                        else {
+                        if (is_integer(fields->value, &ll_number))
+                            condition = BCON_NEW("$gt", BCON_INT64(ll_number));
+                        else
                             condition = BCON_NEW("$gt", BCON_UTF8(fields->value));
-                        }
                     }
                     else if (!strcasecmp(tokens[1], "<=")) {
                         // {
                         //     tokens[0]: {
-                        //         "$lte" : value 
+                        //         "$lte" : value
                         //     }
                         // }
-                        if (is_integer(fields->value)) {
-                            int32_t number = atoi(fields->value);
-                            condition = BCON_NEW("$lte", BCON_INT32(number));
-                        }
-                        else {
+                        if (is_integer(fields->value, &ll_number))
+                            condition = BCON_NEW("$lte", BCON_INT64(ll_number));
+                        else
                             condition = BCON_NEW("$lte", BCON_UTF8(fields->value));
-                        }
                     }
                     else {
                         ast_log(LOG_WARNING, "unexpected operator \"%s\" of \"%s\" \"%s\".\n", tokens[1], fields->name, fields->value);
@@ -297,7 +355,7 @@ static bson_t *make_query(const struct ast_variable *fields, const char *orderby
             ast_log(LOG_ERROR, "something wrong.\n");
             break;
         }
-        root = BCON_NEW("$query", BCON_DOCUMENT(query), 
+        root = BCON_NEW("$query", BCON_DOCUMENT(query),
                         "$orderby", BCON_DOCUMENT(order));
         if (!root) {    // current BCON_NEW might not return any error such as NULL...
             ast_log(LOG_WARNING, "not enough memory\n");
@@ -315,11 +373,24 @@ static bson_t *make_query(const struct ast_variable *fields, const char *orderby
 }
 
 /*!
- * \param   model_name  is name of model to be retrieved.
- * \param   property
+ * \brief   check if the models library has specified collection.
+ * \param   collection  is name of model to be retrieved.
+ * \retval  true if the library poses the specified collection or any error,
+ * \retval  false if not exist.
+ */
+static bool model_check(const char* collection)
+{
+    bson_iter_t iter;
+    return bson_iter_init(&iter, models) && bson_iter_find(&iter, collection);
+}
+
+/*!
+ * \param[in]   model_name  is name of model to be retrieved.
+ * \param[in]   property
+ * \param[in]   value
  * \retval  bson type
  */
-static bson_type_t model_get_btype(const char* model_name, const char* property)
+static bson_type_t model_get_btype(const char* model_name, const char* property, const char* value)
 {
     bson_type_t btype = BSON_TYPE_UNDEFINED;
     bson_iter_t iroot;
@@ -327,39 +398,28 @@ static bson_type_t model_get_btype(const char* model_name, const char* property)
 
     ast_mutex_lock(&model_lock);
     do {
-        if (bson_iter_init_find (&iroot, models, model_name) &&
+        if (value) {
+            if (is_bool(value, NULL))
+                btype = BSON_TYPE_BOOL;
+            else if (is_real(value, NULL))
+                btype = BSON_TYPE_DOUBLE;
+            else
+                btype = BSON_TYPE_UTF8;
+        }
+        if (model_check(model_name) &&
+            bson_iter_init_find (&iroot, models, model_name) &&
             BSON_ITER_HOLDS_DOCUMENT (&iroot) &&
             bson_iter_recurse (&iroot, &imodel) &&
             bson_iter_find(&imodel, property))
         {
             btype = (bson_type_t)bson_iter_as_int64(&imodel);
         }
-        else
-            ast_log(LOG_WARNING, "\"%s\" is not found in %s\n", model_name, property);
     } while(0);
     ast_mutex_unlock(&model_lock);
     return btype;
 }
 
-/*!
- * \brief   check if the models library has specified collection.
- * \param   collection  is name of model to be retrieved.
- * \retval  true if the library poses the specified collection,
- * \retval  false if not exist.
- */
-static bool model_check(const char* collection) 
-{
-    bson_iter_t iter;
-    bool result;
-    ast_mutex_lock(&model_lock);
-    do {
-        result =  bson_iter_init (&iter, models) && bson_iter_find (&iter, collection);
-    } while(0);
-    ast_mutex_unlock(&model_lock);
-    return result;
-}
-
-static void model_register(const char *collection, const bson_t *model) 
+static void model_register(const char *collection, const bson_t *model)
 {
     ast_mutex_lock(&model_lock);
     do {
@@ -374,7 +434,7 @@ static void model_register(const char *collection, const bson_t *model)
     ast_mutex_unlock(&model_lock);
 }
 
-static bson_type_t rtype2btype (require_type rtype) 
+static bson_type_t rtype2btype (require_type rtype)
 {
     bson_type_t btype;
     switch(rtype) {
@@ -404,6 +464,176 @@ static bson_type_t rtype2btype (require_type rtype)
 }
 
 /*!
+ *  Make a document from key-value list
+ *
+ *  \param[in]  table
+ *  \param[in]  fields
+ *  \param[out] doc
+ *  \retval  true if success
+*/
+static bool fields2doc(const char* table, const struct ast_variable *fields, bson_t *doc)
+{
+    bool err;
+    const char* key;
+
+    for (err = false; fields && !err; fields = fields->next) {
+        bson_type_t btype;
+
+        if (strlen(fields->value) == 0)
+            continue;
+        key = key_asterisk2mongo(fields->name);
+        btype = model_get_btype(table, key, fields->value);
+        switch(btype) {
+            case BSON_TYPE_UTF8:
+                err = !BSON_APPEND_UTF8(doc, key, fields->value);
+                break;
+            case BSON_TYPE_BOOL:
+                err = !BSON_APPEND_BOOL(doc, key,
+                    strcmp(fields->value, "true") ? false : true);
+                break;
+            case BSON_TYPE_INT32:
+                err = !BSON_APPEND_INT32(doc, key, atol(fields->value));
+                break;
+            case BSON_TYPE_INT64:
+                err = !BSON_APPEND_INT64(doc, key, atoll(fields->value));
+                break;
+            case BSON_TYPE_DOUBLE:
+                err = !BSON_APPEND_DOUBLE(doc, key, atof(fields->value));
+                break;
+            default:
+                ast_log(LOG_WARNING, "unexpected data type: key=%s, value=%s\n", key, fields->value);
+                break;
+        }
+    }
+    return !err;
+}
+
+/*!
+ *  Get a value from a document
+ *
+ *  \param[in,out]  iter    is a bson iterator of a document
+ *  \param[out]     key     is stored pointer to key name of value
+ *  \param[out]     value   is a buffer to be stored a string of value
+ *  \param[in]      size    is size of buffer for value
+ *  \retval  true if value is valid.
+*/
+static bool doc2value(bson_iter_t* iter, const char** key, char value[], int size)
+{
+    if (size < 25) {
+        ast_log(LOG_ERROR, "size of value is too small\n");
+        return false;
+    }
+    if (BSON_ITER_HOLDS_OID(iter)) {
+        const bson_oid_t * oid;
+        if (strcmp(bson_iter_key(iter), SERVERID) == 0) {
+            // SERVERID is hidden property for application
+            return false;
+        }
+        oid = bson_iter_oid(iter);
+        bson_oid_to_string(oid, value);
+    }
+    else if (BSON_ITER_HOLDS_UTF8(iter)) {
+        uint32_t length;
+        const char* str = bson_iter_utf8(iter, &length);
+        if (!bson_utf8_validate(str, length, false)) {
+            ast_log(LOG_WARNING, "unexpected invalid bson found\n");
+            return false;
+        }
+        snprintf(value, size, "%s", str);
+    }
+    else if (BSON_ITER_HOLDS_BOOL(iter)) {
+        bool d = bson_iter_bool(iter);
+        snprintf(value, size, "%s", d ? "true" : "false");
+    }
+    else if (BSON_ITER_HOLDS_INT32(iter)) {
+        long d = bson_iter_int32(iter);
+        snprintf(value, size, "%ld", d);
+    }
+    else if (BSON_ITER_HOLDS_INT64(iter)) {
+        long long d = bson_iter_int64(iter);
+        snprintf(value, size, "%Ld", d);
+    }
+    else if (BSON_ITER_HOLDS_DOUBLE(iter)) {
+        double d = bson_iter_double(iter);
+        snprintf(value, size, "%.10g", d);
+    }
+    else {
+        // see http://api.mongodb.org/libbson/current/bson_iter_type.html
+        ast_log(LOG_WARNING, "unexpected bson type, %x\n", bson_iter_type(iter));
+        return false;
+    }
+    *key = key_mongo2asterisk(bson_iter_key(iter));
+    return true;
+}
+
+/*!
+ * \brief Update documents in collection that match selector.
+ * \param[in] collection    is a mongoc_collection_t.
+ * \param[in] selector      is a bson_t containing the query to match documents for updating.
+ * \param[in] update        is a bson_t containing the update to perform.
+ *
+ * \retval number of rows affected
+ * \retval -1 on failure
+*/
+static int _collection_update(
+    mongoc_collection_t *collection, const bson_t *selector, const bson_t *update)
+{
+    int ret = -1;
+    bson_t *cmd = NULL;
+    bson_t *opts = NULL;
+    bson_t *updates = NULL;
+    bson_t array = BSON_INITIALIZER;
+    bson_t reply = BSON_INITIALIZER;
+
+    LOG_BSON_AS_JSON(LOG_DEBUG, "selector=%s\n", selector);
+    LOG_BSON_AS_JSON(LOG_DEBUG, "update=%s\n", update);
+
+    do {
+        bson_error_t error;
+        bson_iter_t iter;
+
+        opts = bson_new();
+        updates = BCON_NEW(
+            "q", BCON_DOCUMENT(selector),
+            "u", BCON_DOCUMENT(update),
+            "multi", BCON_BOOL(true)
+        );
+        bson_append_document(&array, "0", -1, updates);
+        cmd = BCON_NEW(
+           "update", BCON_UTF8(mongoc_collection_get_name(collection)),
+           "updates", BCON_ARRAY(&array)
+        );
+
+        if (!mongoc_collection_write_command_with_opts(
+            collection, cmd, opts, &reply, &error))
+        {
+            ast_log(LOG_ERROR, "update failed, error=%s\n", error.message);
+            LOG_BSON_AS_JSON(LOG_ERROR, "cmd=%s\n", cmd);
+            break;
+        }
+        LOG_BSON_AS_JSON(LOG_DEBUG, "reply=%s\n", &reply);
+
+        if (!bson_iter_init(&iter, &reply)
+        || !bson_iter_find(&iter, "nModified")
+        || !BSON_ITER_HOLDS_INT32(&iter)) {
+            ast_log(LOG_ERROR, "no \"nModified\" field found.\n");
+            break;
+        }
+        ret = bson_iter_int32(&iter);
+    } while(0);
+
+    bson_destroy(&reply);
+    bson_destroy(&array);
+    if (updates)
+        bson_destroy(updates);
+    if (opts)
+        bson_destroy(opts);
+    if (cmd)
+        bson_destroy(cmd);
+    return ret;
+}
+
+/*!
  * \brief Execute an SQL query and return ast_variable list
  * \param database  is name of database
  * \param table     is name of collection to find specified records
@@ -426,6 +656,12 @@ static struct ast_variable *realtime(const char *database, const char *table, co
     mongoc_cursor_t *cursor = NULL;
     const bson_t *doc = NULL;
     bson_t *query = NULL;
+
+    if (!database || !table || !fields) {
+        ast_log(LOG_ERROR, "not enough arguments\n");
+        return NULL;
+    }
+    ast_log(LOG_DEBUG, "database=%s, table=%s.\n", database, table);
 
     if(dbpool == NULL) {
         ast_log(LOG_ERROR, "no connection pool\n");
@@ -466,45 +702,14 @@ static struct ast_variable *realtime(const char *database, const char *table, co
                 break;
             }
             while (bson_iter_next(&iter)) {
-                if (BSON_ITER_HOLDS_OID(&iter)) {
-                    if (strcmp(bson_iter_key(&iter), SERVERID) == 0) {
-                        // SERVERID is hidden property for application                      
-                        continue;
-                    }
-                    const bson_oid_t * oid = bson_iter_oid(&iter);
-                    bson_oid_to_string(oid, work);
-                    value = work;
-                    key = key_mongo2asterisk(bson_iter_key(&iter));
-                    // ast_log(LOG_DEBUG, "type=%s, key=%s, value=%s\n", "oid", key, value);
-                }
-                else if (BSON_ITER_HOLDS_UTF8(&iter)) {
-                    uint32_t length;
-                    value = bson_iter_utf8(&iter, &length);
-                    if (!BSON_UTF8_VALIDATE(value, true)) {
-                        ast_log(LOG_WARNING, "unexpected invalid bson found\n");
-                        continue;
-                    }
-                    key = key_mongo2asterisk(bson_iter_key(&iter));
-                    // ast_log(LOG_DEBUG, "type=%s, key=%s, value=%s\n", "utf8", key, value);
-                }
-                else if (BSON_ITER_HOLDS_DOUBLE(&iter)) {
-                    double d = bson_iter_double(&iter);
-                    sprintf(work, "%.10g", d);
-                    value = work;
-                    key = key_mongo2asterisk(bson_iter_key(&iter));
-                    // ast_log(LOG_DEBUG, "type=%s, key=%s, value=%s\n", "double", key, value);
-                }
-                else {
-                    // see http://api.mongodb.org/libbson/current/bson_iter_type.html
-                    ast_log(LOG_WARNING, "unexpected bson type, %x\n", bson_iter_type(&iter));
+                if (!doc2value(&iter, &key, work, sizeof(work)))
                     continue;
-                }
-
+                value = work;
                 if (prev) {
                     prev->next = ast_variable_new(key, value, "");
                     if (prev->next)
                         prev = prev->next;
-                } 
+                }
                 else
                     prev = var = ast_variable_new(key, value, "");
             }
@@ -530,7 +735,7 @@ static struct ast_variable *realtime(const char *database, const char *table, co
  * \param fields    is a list containing one or more field/operator/value set.
  *
  * Select database and preform query on table, prepare the sql statement
- * Sub-in the values to the prepared statement and execute it. 
+ * Sub-in the values to the prepared statement and execute it.
  * Execute this prepared query against MongoDB.
  * Return results as an ast_config variable.
  *
@@ -551,6 +756,12 @@ static struct ast_config* realtime_multi(const char *database, const char *table
     const bson_t* query = NULL;
     const char *initfield;
     char *op;
+
+    if (!database || !table || !fields) {
+        ast_log(LOG_ERROR, "not enough arguments\n");
+        return NULL;
+    }
+    ast_log(LOG_DEBUG, "database=%s, table=%s.\n", database, table);
 
     if(dbpool == NULL) {
         ast_log(LOG_ERROR, "no connection pool\n");
@@ -607,43 +818,11 @@ static struct ast_config* realtime_multi(const char *database, const char *table
                 break;
             }
             while (bson_iter_next(&iter)) {
-                if (BSON_ITER_HOLDS_OID(&iter)) {
-                    if (strcmp(bson_iter_key(&iter), SERVERID) == 0) {
-                        // SERVERID is hidden property for application                      
-                        continue;
-                    }
-                    const bson_oid_t * oid = bson_iter_oid(&iter);
-                    bson_oid_to_string(oid, work);
-                    value = work;
-                    key = key_mongo2asterisk(bson_iter_key(&iter));
-                    // ast_log(LOG_DEBUG, "type=%s, key=%s, value=%s\n", "oid", key, value);
-                }
-                else if (BSON_ITER_HOLDS_UTF8(&iter)) {
-                    uint32_t length;
-                    value = bson_iter_utf8(&iter, &length);
-                    if (!BSON_UTF8_VALIDATE(value, true)) {
-                        ast_log(LOG_WARNING, "unexpected invalid bson found\n");
-                        continue;
-                    }
-                    key = key_mongo2asterisk(bson_iter_key(&iter));
-                    // ast_log(LOG_DEBUG, "type=%s, key=%s, value=%s\n", "utf8", key, value);
-                }
-                else if (BSON_ITER_HOLDS_DOUBLE(&iter)) {
-                    double d = bson_iter_double(&iter);
-                    sprintf(work, "%.10g", d);
-                    value = work;
-                    key = key_mongo2asterisk(bson_iter_key(&iter));
-                    // ast_log(LOG_DEBUG, "type=%s, key=%s, value=%s\n", "double", key, value);
-                }
-                else {
-                    // see http://api.mongodb.org/libbson/current/bson_iter_type.html
-                    ast_log(LOG_WARNING, "unexpected bson type, %x\n", bson_iter_type(&iter));
+                if (!doc2value(&iter, &key, work, sizeof(work)))
                     continue;
-                }
-
-                if (!strcmp(initfield, key)) {
+                value = work;
+                if (!strcmp(initfield, key))
                     ast_category_rename(cat, value);
-                }
                 var = ast_variable_new(key, value, "");
                 ast_variable_append(cat, var);
             }
@@ -686,18 +865,12 @@ static int update(const char *database, const char *table, const char *keyfield,
     mongoc_client_t *dbclient = NULL;
     mongoc_collection_t *collection = NULL;
 
-    if (!table || !fields || !keyfield || !lookup) {
+    if (!database || !table || !keyfield || !lookup || !fields) {
         ast_log(LOG_ERROR, "not enough arguments\n");
         return -1;
     }
-    if (!model_check(table)) {
-        ast_log(LOG_ERROR, "no reference model for %s\n", table);
-        return -1;
-    }
-    if (!fields) {
-        ast_log(LOG_NOTICE, "no fields to update\n");
-        return 0;
-    }
+    ast_log(LOG_DEBUG, "database=%s, table=%s, keyfield=%s, lookup=%s.\n", database, table, keyfield, lookup);
+
     if(dbpool == NULL) {
         ast_log(LOG_ERROR, "no connection pool\n");
         return -1;
@@ -706,11 +879,18 @@ static int update(const char *database, const char *table, const char *keyfield,
     if(dbclient == NULL) {
         ast_log(LOG_ERROR, "no client allocated\n");
         return -1;
-    }    
+    }
 
     do {
-        bson_error_t error;
-        bool err;
+        query = serverid ? BCON_NEW(SERVERID, BCON_OID(serverid)) : bson_new();
+        if (!query) {
+            ast_log(LOG_ERROR, "not enough memory\n");
+            break;
+        }
+        if (!BSON_APPEND_UTF8(query, key_asterisk2mongo(keyfield), lookup)) {
+            ast_log(LOG_ERROR, "cannot make a query\n");
+            break;
+        }
 
         data = bson_new();
         if (!data) {
@@ -722,57 +902,19 @@ static int update(const char *database, const char *table, const char *keyfield,
             ast_log(LOG_ERROR, "not enough memory\n");
             break;
         }
-        query = serverid ? BCON_NEW(SERVERID, BCON_OID(serverid)) : bson_new();
-        if (!query) {
-            ast_log(LOG_ERROR, "not enough memory\n");
+        if (!fields2doc(table, fields, data)) {
+            ast_log(LOG_ERROR, "cannot make data to update\n");
             break;
         }
-        if (!BSON_APPEND_UTF8(query, keyfield, lookup)) {
-            ast_log(LOG_ERROR, "cannot make a query\n");
+        if (!BSON_APPEND_DOCUMENT(update, "$set", data)) {
+            ast_log(LOG_ERROR,
+                "cannot make data to update, database=%s, table=%s, keyfield=%s, lookup=%s\n",
+                database, table, keyfield, lookup);
             break;
         }
 
         collection = mongoc_client_get_collection(dbclient, database, table);
-
-        for (err = false; fields && !err; fields = fields->next) {
-            if (strlen(fields->value) == 0)
-                continue;
-            bson_type_t btype = model_get_btype(table, fields->name);
-            switch(btype) {
-                case BSON_TYPE_UTF8:
-                    err = !BSON_APPEND_UTF8(data, fields->name, fields->value);
-                    break;
-                case BSON_TYPE_DOUBLE:
-                    err = !BSON_APPEND_DOUBLE(data, fields->name, (double)atof(fields->value));
-                    break;
-                default:
-                    ast_log(LOG_WARNING, 
-                        "not supported btype=%d. database=%s, table=%s, keyfield=%s, lookup=%s\n", 
-                        btype, database, table, keyfield, lookup);
-            }
-        }
-        if (err) {
-            ast_log(LOG_ERROR, "cannot make data to update\n");
-            break;
-        }
-
-        if (!BSON_APPEND_DOCUMENT(update, "$set", data)) {
-            ast_log(LOG_ERROR, "cannot make data to update, database=%s, table=%s, keyfield=%s, lookup=%s\n",
-                    database, table, keyfield, lookup);
-            break;
-        }
-
-        LOG_BSON_AS_JSON(LOG_DEBUG, "query=%s\n", query);
-        LOG_BSON_AS_JSON(LOG_DEBUG, "update=%s\n", update);
-
-        if (!mongoc_collection_update(collection, MONGOC_UPDATE_NONE, query, update, NULL, &error)) {
-            ast_log(LOG_ERROR, "update failed, error=%s\n", error.message);
-            LOG_BSON_AS_JSON(LOG_ERROR, "query=%s\n", query);
-            LOG_BSON_AS_JSON(LOG_ERROR, "update=%s\n", update);
-            break;
-        }
-
-        ret = 0; // success
+        ret = _collection_update(collection, query, update);
     } while(0);
 
     if (data)
@@ -783,6 +925,7 @@ static int update(const char *database, const char *table, const char *keyfield,
         bson_destroy((bson_t *)query);
     if (collection)
         mongoc_collection_destroy(collection);
+
     mongoc_client_pool_push(dbpool, dbclient);
     return ret;
 }
@@ -797,9 +940,15 @@ static int require(const char *database, const char *table, va_list ap)
     bson_t *model = bson_new();
     char *elm;
 
+    if (!database || !table) {
+        ast_log(LOG_ERROR, "not enough arguments\n");
+        return -1;
+    }
+    ast_log(LOG_DEBUG, "database=%s, table=%s.\n", database, table);
+
     while ((elm = va_arg(ap, char *))) {
         int type = va_arg(ap, require_type);
-        // int size = 
+        // int size =
         va_arg(ap, int);
         // ast_log(LOG_DEBUG, "elm=%s, type=%d, size=%d\n", elm, type, size);
         BSON_APPEND_INT64(model, elm, rtype2btype(type));
@@ -827,9 +976,78 @@ static int require(const char *database, const char *table, va_list ap)
 */
 static int update2(const char *database, const char *table, const struct ast_variable *lookup_fields, const struct ast_variable *update_fields)
 {
+    int ret = -1;
+    bson_t *query = NULL;
+    bson_t *data = NULL;
+    bson_t *update = NULL;
+    mongoc_client_t *dbclient = NULL;
+    mongoc_collection_t *collection = NULL;
+
+    if (!database || !table || !lookup_fields || !update_fields) {
+        ast_log(LOG_ERROR, "not enough arguments\n");
+        return -1;
+    }
     ast_log(LOG_DEBUG, "database=%s, table=%s\n", database, table);
-    //todo
-    return -1;
+
+    if(dbpool == NULL) {
+        ast_log(LOG_ERROR, "no connection pool\n");
+        return -1;
+    }
+    dbclient = mongoc_client_pool_pop(dbpool);
+    if(dbclient == NULL) {
+        ast_log(LOG_ERROR, "no client allocated\n");
+        return -1;
+    }
+
+    do {
+        query = serverid ? BCON_NEW(SERVERID, BCON_OID(serverid)) : bson_new();
+        if (!query) {
+            ast_log(LOG_ERROR, "not enough memory\n");
+            break;
+        }
+        if (!fields2doc(table, lookup_fields, query)) {
+            ast_log(LOG_ERROR, "cannot make data to update\n");
+            break;
+        }
+
+        LOG_BSON_AS_JSON(LOG_DEBUG, "query=%s\n", query);
+
+        data = bson_new();
+        if (!data) {
+            ast_log(LOG_ERROR, "not enough memory\n");
+            break;
+        }
+        if (!fields2doc(table, update_fields, data)) {
+            ast_log(LOG_ERROR, "cannot make data to update\n");
+            break;
+        }
+        update = bson_new();
+        if (!update) {
+            ast_log(LOG_ERROR, "not enough memory\n");
+            break;
+        }
+        if (!BSON_APPEND_DOCUMENT(update, "$set", data)) {
+            ast_log(LOG_ERROR, "cannot make data to update, database=%s, table=%s\n",
+                    database, table);
+            break;
+        }
+
+        collection = mongoc_client_get_collection(dbclient, database, table);
+        ret = _collection_update(collection, query, update);
+
+    } while(0);
+
+    if (data)
+        bson_destroy((bson_t *)data);
+    if (update)
+        bson_destroy((bson_t *)update);
+    if (query)
+        bson_destroy((bson_t *)query);
+    if (collection)
+        mongoc_collection_destroy(collection);
+
+    mongoc_client_pool_push(dbpool, dbclient);
+    return ret;
 }
 
 /*!
@@ -847,9 +1065,60 @@ static int update2(const char *database, const char *table, const struct ast_var
 */
 static int store(const char *database, const char *table, const struct ast_variable *fields)
 {
-    ast_log(LOG_DEBUG, "database=%s, table=%s\n", database, table);
-    //todo
-    return -1;
+    int ret = -1;
+    bson_t *document = NULL;
+    mongoc_client_t *dbclient = NULL;
+    mongoc_collection_t *collection = NULL;
+
+    if (!database || !table || !fields) {
+        ast_log(LOG_ERROR, "not enough arguments\n");
+        return -1;
+    }
+    ast_log(LOG_DEBUG, "database=%s, table=%s.\n", database, table);
+
+    if(dbpool == NULL) {
+        ast_log(LOG_ERROR, "no connection pool\n");
+        return -1;
+    }
+    dbclient = mongoc_client_pool_pop(dbpool);
+    if(dbclient == NULL) {
+        ast_log(LOG_ERROR, "no client allocated\n");
+        return -1;
+    }
+
+    do {
+        bson_error_t error;
+
+        document = serverid ? BCON_NEW(SERVERID, BCON_OID(serverid)) : bson_new();
+        if (!document) {
+            ast_log(LOG_ERROR, "not enough memory\n");
+            break;
+        }
+
+        collection = mongoc_client_get_collection(dbclient, database, table);
+
+        if (!fields2doc(table, fields, document)) {
+            ast_log(LOG_ERROR, "cannot make a document to update\n");
+            break;
+        }
+
+        LOG_BSON_AS_JSON(LOG_DEBUG, "document=%s\n", document);
+
+        if (!mongoc_collection_insert(collection, MONGOC_INSERT_NONE, document, NULL, &error)) {
+            ast_log(LOG_ERROR, "store failed, error=%s\n", error.message);
+            LOG_BSON_AS_JSON(LOG_ERROR, "document=%s\n", document);
+            break;
+        }
+
+        ret = 1; // success
+    } while(0);
+
+    if (document)
+        bson_destroy((bson_t *)document);
+    if (collection)
+        mongoc_collection_destroy(collection);
+    mongoc_client_pool_push(dbpool, dbclient);
+    return ret;
 }
 
 /*!
@@ -869,9 +1138,57 @@ static int store(const char *database, const char *table, const struct ast_varia
 */
 static int destroy(const char *database, const char *table, const char *keyfield, const char *lookup, const struct ast_variable *fields)
 {
-    ast_log(LOG_DEBUG, "database=%s, table=%s\n", database, table);
-    //todo
-    return -1;
+    int ret = -1;
+    bson_t *selector = NULL;
+    mongoc_client_t *dbclient = NULL;
+    mongoc_collection_t *collection = NULL;
+
+    if (!database || !table || !keyfield || !lookup) {
+        ast_log(LOG_ERROR, "not enough arguments\n");
+        return -1;
+    }
+    ast_log(LOG_DEBUG, "database=%s, table=%s, keyfield=%s, lookup=%s.\n", database, table, keyfield, lookup);
+    ast_log(LOG_DEBUG, "fields->name=%s, fields->value=%s.\n", fields?fields->name:"NULL", fields?fields->value:"NULL");
+
+    if(dbpool == NULL) {
+        ast_log(LOG_ERROR, "no connection pool\n");
+        return -1;
+    }
+    dbclient = mongoc_client_pool_pop(dbpool);
+    if(dbclient == NULL) {
+        ast_log(LOG_ERROR, "no client allocated\n");
+        return -1;
+    }
+
+    do {
+        bson_error_t error;
+
+        selector = serverid ? BCON_NEW(SERVERID, BCON_OID(serverid)) : bson_new();
+        if (!selector) {
+            ast_log(LOG_ERROR, "not enough memory\n");
+            break;
+        }
+        if (!BSON_APPEND_UTF8(selector, key_asterisk2mongo(keyfield), lookup)) {
+            ast_log(LOG_ERROR, "cannot make a query\n");
+            break;
+        }
+
+        collection = mongoc_client_get_collection(dbclient, database, table);
+
+        if (!mongoc_collection_remove(collection, MONGOC_REMOVE_SINGLE_REMOVE, selector, NULL, &error)) {
+             ast_log(LOG_ERROR, "destroy failed, error=%s\n", error.message);
+             break;
+        }
+
+        ret = 1; // success
+    } while(0);
+
+    if (selector)
+        bson_destroy((bson_t *)selector);
+    if (collection)
+        mongoc_collection_destroy(collection);
+    mongoc_client_pool_push(dbpool, dbclient);
+    return ret;
 }
 
 static struct ast_config *load(
@@ -970,7 +1287,7 @@ static struct ast_config *load(
             category = bson_iter_utf8(&iter, &length);
             if (!category) {
                 ast_log(LOG_ERROR, "cannot read category.\n");
-                break;                
+                break;
             }
 
             if(!bson_iter_find(&iter, "var_name")) {
@@ -980,7 +1297,7 @@ static struct ast_config *load(
             var_name = bson_iter_utf8(&iter, &length);
             if (!var_name) {
                 ast_log(LOG_ERROR, "cannot read var_name.\n");
-                break;                
+                break;
             }
 
             if(!bson_iter_find(&iter, "var_val")) {
@@ -990,7 +1307,7 @@ static struct ast_config *load(
             var_val = bson_iter_utf8(&iter, &length);
             if (!var_val) {
                 ast_log(LOG_ERROR, "cannot read var_val.\n");
-                break;                
+                break;
             }
 
             if (!strcmp (var_val, "#include")) {
@@ -1000,7 +1317,7 @@ static struct ast_config *load(
                 }
                 ast_log(LOG_DEBUG, "#include ignored, who_asked=%s\n", who_asked);
                 continue;
-            } 
+            }
 
             if (strcmp(last_category, category) || last_cat_metric != cat_metric) {
                 cur_cat = ast_category_new(category, "", 99999);
@@ -1036,7 +1353,7 @@ static struct ast_config *load(
     return cfg;
 }
 
-/*! 
+/*!
  * \brief Callback for clearing any cached info
  * \note We don't currently cache anything
  * \retval 0 If any cache was purged
@@ -1085,6 +1402,15 @@ static int config(int reload)
             ast_log(LOG_ERROR, "parsing uri error, %s\n", tmp);
             break;
         }
+
+        if ((tmp = ast_variable_retrieve(cfg, CATEGORY, "apm"))
+        && (sscanf(tmp, "%u", &apm_enabled) != 1)) {
+           ast_log(LOG_WARNING, "apm must be a 0|1, not '%s'\n", tmp);
+           apm_enabled = 0;
+        }
+        if (apm_context)
+            ast_mongo_apm_stop(apm_context);
+
         if (dbpool)
             mongoc_client_pool_destroy(dbpool);
         dbpool = mongoc_client_pool_new(uri);
@@ -1092,6 +1418,9 @@ static int config(int reload)
             ast_log(LOG_ERROR, "cannot make a connection pool for MongoDB\n");
             break;
         }
+
+        if (apm_enabled)
+            apm_context = ast_mongo_apm_start(dbpool);
 
         if ((tmp = ast_variable_retrieve(cfg, CATEGORY, SERVERID)) != NULL) {
             if (!bson_oid_is_valid (tmp, strlen(tmp))) {
@@ -1137,7 +1466,12 @@ static int unload_module(void)
 {
     ast_config_engine_deregister(&mongodb_engine);
     if (models)
-       bson_destroy(models);
+        bson_destroy(models);
+    if (apm_context)
+        ast_mongo_apm_stop(apm_context);
+    if (dbpool)
+        mongoc_client_pool_destroy(dbpool);
+    ast_log(LOG_DEBUG, "unloaded.\n");
     return 0;
 }
 

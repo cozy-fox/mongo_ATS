@@ -1,0 +1,437 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ast_mongo check cdr 1`] = `
+Array [
+  Object {
+    "accountcode": "",
+    "amaflags": "DOCUMENTATION",
+    "billsec": 5,
+    "channel": "PJSIP/6001",
+    "clid": "\\"\\" <>",
+    "dcontext": "default",
+    "disposition": "ANSWERED",
+    "dst": "s",
+    "dstchannel": "",
+    "duration": 5,
+    "lastapp": "Playback",
+    "lastdata": "demo-thanks",
+    "peeraccount": "",
+    "sequence": 0,
+    "src": "",
+    "userfield": "",
+  },
+]
+`;
+
+exports[`ast_mongo check cel 1`] = `
+Array [
+  Object {
+    "accountcode": "",
+    "appdata": "",
+    "appname": "",
+    "channame": "PJSIP/6001",
+    "cid_ani": "",
+    "cid_dnid": "",
+    "cid_name": "",
+    "cid_num": "",
+    "cid_rdnis": "",
+    "context": "default",
+    "eventname": "CHAN_START",
+    "eventtype": 1,
+    "exten": "s",
+    "extra": "",
+    "peer": "",
+    "peeraccount": "",
+    "userfield": "",
+  },
+  Object {
+    "accountcode": "",
+    "appdata": "(Outgoing Line)",
+    "appname": "AppDial2",
+    "channame": "PJSIP/6001",
+    "cid_ani": "",
+    "cid_dnid": "",
+    "cid_name": "",
+    "cid_num": "",
+    "cid_rdnis": "",
+    "context": "default",
+    "eventname": "ANSWER",
+    "eventtype": 4,
+    "exten": "s",
+    "extra": "",
+    "peer": "",
+    "peeraccount": "",
+    "userfield": "",
+  },
+  Object {
+    "accountcode": "",
+    "appdata": "(Outgoing Line)",
+    "appname": "AppDial2",
+    "channame": "PJSIP/6001",
+    "cid_ani": "",
+    "cid_dnid": "",
+    "cid_name": "",
+    "cid_num": "",
+    "cid_rdnis": "",
+    "context": "default",
+    "eventname": "HANGUP",
+    "eventtype": 3,
+    "exten": "s",
+    "extra": Object {
+      "dialstatus": "",
+      "hangupcause": 0,
+      "hangupsource": "",
+    },
+    "peer": "",
+    "peeraccount": "",
+    "userfield": "",
+  },
+  Object {
+    "accountcode": "",
+    "appdata": "(Outgoing Line)",
+    "appname": "AppDial2",
+    "channame": "PJSIP/6001",
+    "cid_ani": "",
+    "cid_dnid": "",
+    "cid_name": "",
+    "cid_num": "",
+    "cid_rdnis": "",
+    "context": "default",
+    "eventname": "CHAN_END",
+    "eventtype": 2,
+    "exten": "s",
+    "extra": "",
+    "peer": "",
+    "peeraccount": "",
+    "userfield": "",
+  },
+]
+`;
+
+exports[`ast_mongo check pjsip resources of the remote asterisk 1`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "[ Context '__func_periodic_hook_context__' created by 'func_periodic_hook' ]
+'beep' (CID match '') =>  1. Answer()                                   [func_periodic_hook]
+2. Playback(beep)                             [func_periodic_hook]
+'hook' (CID match '') =>  1. Set(EncodedChannel=\${CUT(HOOK_CHANNEL,-,1-2)}) [func_periodic_hook]
+2. Set(GROUP_NAME=\${EncodedChannel}\${HOOK_ID}) [func_periodic_hook]
+3. Set(GROUP(periodic-hook)=\${GROUP_NAME})    [func_periodic_hook]
+4. ExecIf($[\${GROUP_COUNT(\${GROUP_NAME}@periodic-hook)} > 1]?Hangup()) [func_periodic_hook]
+5. Set(ChannelToSpy=\${URIDECODE(\${EncodedChannel})}) [func_periodic_hook]
+6. ChanSpy(\${ChannelToSpy},qEB)               [func_periodic_hook]
+
+[ Context 'default' created by 'pbx_config' ]
+'_6.' =>          1. NoOp()                                     [extensions.conf:0]
+2. Dial(PJSIP/\${EXTEN})                       [extensions.conf:0]
+3. Hangup()                                   [extensions.conf:0]
+
+-= 3 extensions (11 priorities) in 2 contexts. =-",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo check pjsip resources of the remote asterisk 2`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "Transport:  <TransportId........>  <Type>  <cos>  <tos>  <BindAddress....................>
+==========================================================================================
+
+Transport:  transport-udp             udp      0      0  0.0.0.0:5060
+
+Objects found: 1
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo check pjsip resources of the remote asterisk 3`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "Transport:  <TransportId........>  <Type>  <cos>  <tos>  <BindAddress....................>
+==========================================================================================
+
+Transport:  transport-udp             udp      0      0  0.0.0.0:5060
+
+ParameterName              : ParameterValue
+===========================================
+allow_reload               : false
+async_operations           : 1
+bind                       : 0.0.0.0:5060
+ca_list_file               :
+ca_list_path               :
+cert_file                  :
+cipher                     :
+cos                        : 0
+domain                     :
+external_media_address     :
+external_signaling_address :
+external_signaling_port    : 0
+local_net                  :
+method                     : unspecified
+password                   :
+priv_key_file              :
+protocol                   : udp
+require_client_cert        : No
+symmetric_transport        : false
+tos                        : 0
+verify_client              : No
+verify_server              : No
+websocket_write_timeout    : 100
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo check pjsip resources of the remote asterisk 4`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "Endpoint:  <Endpoint/CID.....................................>  <State.....>  <Channels.>
+I/OAuth:  <AuthId/UserName...........................................................>
+Aor:  <Aor............................................>  <MaxContact>
+Contact:  <Aor/ContactUri..........................> <Hash....> <Status> <RTT(ms)..>
+Transport:  <TransportId........>  <Type>  <cos>  <tos>  <BindAddress..................>
+Identify:  <Identify/Endpoint.........................................................>
+Match:  <criteria.........................>
+Channel:  <ChannelId......................................>  <State.....>  <Time.....>
+Exten: <DialedExten...........>  CLCID: <ConnectedLineCID.......>
+==========================================================================================
+
+Endpoint:  6001                                                 Unavailable   0 of inf
+InAuth:  6001/6001
+Aor:  6001                                               1
+Contact:  6001/sip:6001@tester:5060                  9d7987fe43 Created       0.000
+Transport:  transport-udp             udp      0      0  0.0.0.0:5060
+
+
+Objects found: 1
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo check pjsip resources of the remote asterisk 5`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "Endpoint:  <Endpoint/CID.....................................>  <State.....>  <Channels.>
+I/OAuth:  <AuthId/UserName...........................................................>
+Aor:  <Aor............................................>  <MaxContact>
+Contact:  <Aor/ContactUri..........................> <Hash....> <Status> <RTT(ms)..>
+Transport:  <TransportId........>  <Type>  <cos>  <tos>  <BindAddress..................>
+Identify:  <Identify/Endpoint.........................................................>
+Match:  <criteria.........................>
+Channel:  <ChannelId......................................>  <State.....>  <Time.....>
+Exten: <DialedExten...........>  CLCID: <ConnectedLineCID.......>
+==========================================================================================
+
+Endpoint:  6001                                                 Not in use    0 of inf
+InAuth:  6001/6001
+Aor:  6001                                               1
+Contact:  6001/sip:6001@tester:5060                  9d7987fe43 Created       0.000
+Transport:  transport-udp             udp      0      0  0.0.0.0:5060
+
+
+ParameterName                      : ParameterValue
+=========================================================
+100rel                             : yes
+accountcode                        :
+acl                                :
+aggregate_mwi                      : true
+allow                              : (ulaw)
+allow_overlap                      : true
+allow_subscribe                    : true
+allow_transfer                     : true
+aors                               : 6001
+asymmetric_rtp_codec               : false
+auth                               : 6001
+bind_rtp_to_media_address          : false
+bundle                             : false
+call_group                         :
+callerid                           : <unknown>
+callerid_privacy                   : allowed_not_screened
+callerid_tag                       :
+connected_line_method              : invite
+contact_acl                        :
+context                            : default
+cos_audio                          : 0
+cos_video                          : 0
+device_state_busy_at               : 0
+direct_media                       : true
+direct_media_glare_mitigation      : none
+direct_media_method                : invite
+disable_direct_media_on_nat        : false
+dtls_ca_file                       :
+dtls_ca_path                       :
+dtls_cert_file                     :
+dtls_cipher                        :
+dtls_fingerprint                   : SHA-256
+dtls_private_key                   :
+dtls_rekey                         : 0
+dtls_setup                         : active
+dtls_verify                        : No
+dtmf_mode                          : rfc4733
+fax_detect                         : false
+fax_detect_timeout                 : 0
+force_avp                          : false
+force_rport                        : true
+from_domain                        :
+from_user                          :
+g726_non_standard                  : false
+ice_support                        : false
+identify_by                        : username
+inband_progress                    : false
+incoming_mwi_mailbox               :
+language                           :
+mailboxes                          :
+max_audio_streams                  : 1
+max_video_streams                  : 1
+media_address                      :
+media_encryption                   : no
+media_encryption_optimistic        : false
+media_use_received_transport       : false
+message_context                    :
+moh_passthrough                    : false
+moh_suggest                        : default
+mwi_from_user                      :
+mwi_subscribe_replaces_unsolicited : false
+named_call_group                   :
+named_pickup_group                 :
+notify_early_inuse_ringing         : false
+one_touch_recording                : false
+outbound_auth                      :
+outbound_proxy                     :
+pickup_group                       :
+preferred_codec_only               : false
+record_off_feature                 : automixmon
+record_on_feature                  : automixmon
+refer_blind_progress               : true
+rewrite_contact                    : true
+rpid_immediate                     : false
+rtcp_mux                           : false
+rtp_engine                         : asterisk
+rtp_ipv6                           : false
+rtp_keepalive                      : 0
+rtp_symmetric                      : false
+rtp_timeout                        : 0
+rtp_timeout_hold                   : 0
+sdp_owner                          : -
+sdp_session                        : Asterisk
+send_diversion                     : true
+send_pai                           : false
+send_rpid                          : false
+set_var                            :
+srtp_tag_32                        : false
+sub_min_expiry                     : 0
+subscribe_context                  :
+t38_udptl                          : false
+t38_udptl_ec                       : none
+t38_udptl_ipv6                     : false
+t38_udptl_maxdatagram              : 0
+t38_udptl_nat                      : false
+timers                             : yes
+timers_min_se                      : 90
+timers_sess_expires                : 1800
+tone_zone                          :
+tos_audio                          : 0
+tos_video                          : 0
+transport                          : transport-udp
+trust_id_inbound                   : false
+trust_id_outbound                  : false
+use_avpf                           : false
+use_ptime                          : false
+user_eq_phone                      : false
+voicemail_extension                :
+webrtc                             : no
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo check pjsip resources of the remote asterisk 6`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "Aor:  <Aor..............................................>  <MaxContact>
+Contact:  <Aor/ContactUri............................> <Hash....> <Status> <RTT(ms)..>
+==========================================================================================
+
+Aor:  6001                                                 1
+Contact:  6001/sip:6001@tester:5060                    9d7987fe43 Unknown         nan
+
+
+Objects found: 1
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo check pjsip resources of the remote asterisk 7`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "Aor:  <Aor..............................................>  <MaxContact>
+Contact:  <Aor/ContactUri............................> <Hash....> <Status> <RTT(ms)..>
+
+Aor:  6001                                                 1
+Contact:  6001/sip:6001@tester:5060                    9d7987fe43 Unknown         nan
+
+
+ParameterName        : ParameterValue
+authenticate_qualify : false
+contact              : sip:6001@tester:5060
+default_expiration   : 3600
+mailboxes            :
+max_contacts         : 1
+maximum_expiration   : 7200
+minimum_expiration   : 60
+outbound_proxy       :
+qualify_frequency    : 0
+qualify_timeout      : 3.000000
+remove_existing      : true
+support_path         : false
+voicemail_extension  :
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo check pjsip resources of the remote asterisk 8`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "I/OAuth:  <AuthId/UserName.............................................................>
+==========================================================================================
+
+Auth:  6001/6001
+
+Objects found: 1
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo check pjsip resources of the remote asterisk 9`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "I/OAuth:  <AuthId/UserName.............................................................>
+==========================================================================================
+
+Auth:  6001/6001
+
+ParameterName  : ParameterValue
+===============================
+auth_type      : userpass
+md5_cred       :
+nonce_lifetime : 32
+password       : 6001
+realm          :
+username       : 6001
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo wait for a call, accept it, then disconnect from far 1`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "",
+  "Response": "Success",
+}
+`;

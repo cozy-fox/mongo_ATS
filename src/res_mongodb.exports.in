@@ -1,4 +1,6 @@
 {
-	local:
+global:
+    LINKER_SYMBOL_PREFIXast_mongo_*;
+local:
 		*;
 };

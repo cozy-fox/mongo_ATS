@@ -9,7 +9,7 @@ MOUNT_POINT=$3
 #
 #
 #
-IMAGE=node:boron
+IMAGE=node:carbon
 KEEP_ALIVE_CMD='tail -f /dev/null'
 #
 #   launch an environment for tester

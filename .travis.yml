@@ -1,0 +1,13 @@
+sudo: required
+services:
+  - docker
+before_install:
+  - docker pull minoruta/pjsip-node-alpine
+  - docker image ls
+install:
+  - cd test/docker
+  - docker-compose build
+before_script:
+  - docker-compose up -d
+script:
+  - docker exec -it tester ash -c 'cd ast_mongo && npm install && npm test'

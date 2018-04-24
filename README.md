@@ -20,8 +20,11 @@ Plugin name            |Realtime    |CDR|CEL|Source code|Config file(s)
 The plugins are provided as source code patches to Asterisk.
 See [patches](patches) in detail.
 
+## Test
+See [Test](test/docker).
 
-## Test bench
+## ~~Test bench~~
+**(Deprecated, use [Test](test/docker) instead of it)**
 
 The test bench based on Docker technology for these plugins is also provided.
 You can examine how it works on your desktop simply.
@@ -47,13 +50,68 @@ Name of DB |Name of Collection |Comment
 `cdr`      | `cdr`
 `cel`      | `cel`
 
-### Config files for the exmaple
+### Config files as example
+- *CHANGE@v0.3*: The three config files `res_config_mongodb.conf`, `cdr_mongodb.conf` and `cel_mongodb.conf` have compiled into one `ast_mongo.conf`.
+- [`ast_mongo.conf`](test_bench/configs/ast_mongo.conf) for ast_mongo plugins;
 
-
-- [`res_config_mongodb.conf`](test_bench/configs/res_config_mongodb.conf) for realtime configuration engine
-
-        [mongodb]
+        ;==========================================
+        ;
+        ; for common configuration
+        ;
+        [common]
+        ;------------------------------------------
+        ; MongoDB C Driver - Logging configuration
+        ; see http://mongoc.org/libmongoc/current/logging.html in detail
+        ;
+        ; -1 = disable logging of mongodb-c-driver
+        ; 0 = MONGOC_LOG_LEVEL_ERROR,
+        ; 1,2,...,
+        ; 6 = MONGOC_LOG_LEVEL_TRACE
+        ; default is -1
+        ;mongoc_log_level=-1
+        ;------------------------------------------
+        ; MongoDB C Driver - APM configuration
+        ; see http://mongoc.org/libmongoc/current/application-performance-monitoring.html in detail
+        ;
+        ; 0  = disable monitoring
+        ; 0 != enable monitoring
+        ; default is 0
+        ;apm_command_monitoring=0
+        ;apm_sdam_monitoring=0
+        ;==========================================
+        ;
+        ; for realtime configuration engine
+        ;
+        [config]
         uri=mongodb://mongodb.local/asterisk    ; location of database
+        ;------------------------------------------
+        ; 0 != enable APM
+        ; default is disabled (0)
+        ;apm=0
+        ;==========================================
+        ;
+        ; for CDR plugin
+        ;
+        [cdr]
+        uri=mongodb://mongodb.local/cdr ; location of database
+        database=cdr                    ; name of database
+        collection=cdr                  ; name of collection to record cdr data
+        ;------------------------------------------
+        ; 0 != enable APM
+        ; default is disabled (0)
+        ;apm=0
+        ;==========================================
+        ;
+        ; for CEL plugin
+        ;
+        [cel]
+        uri=mongodb://mongodb.local/cel ; location of database
+        database=cel                    ; name of database
+        collection=cel                  ; name of collection to record cel data
+        ;------------------------------------------
+        ; 0 != enable APM
+        ; default is disabled (0)
+        ;apm=0
 
 - [`sorcery.conf`](test_bench/configs/sorcery.conf) specifies map from asterisk's resources to database's collections.
 
@@ -73,30 +131,16 @@ Name of DB |Name of Collection |Comment
         ps_aors => mongodb,asterisk
 
         ; map extensions.conf to ast_config collection of asterisk database
-        extensions.conf => mongodb,asterisk,ast_config 
+        extensions.conf => mongodb,asterisk,ast_config
         pjsip.conf => mongodb,asterisk,ast_config
-
-- [`cdr_mongodb.conf`](test_bench/configs/cdr_mongodb.conf) specifies the location, name and collection of database for cdr backend.
-
-        [mongodb]
-        uri=mongodb://mongodb.local/cdr ; location of database
-        database=cdr                    ; name of database
-        collection=cdr                  ; name of collection to record cdr data
-
-- [`cel_mongodb.conf`](test_bench/configs/cel_mongodb.conf) specifies the location, name and collection of database for cel backend.
-
-        [mongodb]
-        uri=mongodb://mongodb.local/cel ; location of database
-        database=cel                    ; name of database
-        collection=cel                  ; name of collection to record cel data
 
 - See Asterisk's official document [Setting up PJSIP Realtime][5] as well.
 
 ## License and Copyright
 
-- The related code to Asterisk: 
+- The related code to Asterisk:
     - GNU GENERAL PUBLIC LICENSE Version 2
-- Any other resources and files: 
+- Any other resources and files:
     - The MIT License (MIT)
 - Copyright: (C) 2016-17, KINOSHITA minoru, [viktike][9] for cel_mongodb
 

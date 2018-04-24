@@ -1,0 +1,90 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ast_mongo check if there is no identifies 1`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "No objects found.
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo check the identifies 1`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "Identify:  <Identify/Endpoint...........................................................>
+Match:  <criteria...........................>
+==========================================================================================
+
+Identify:  000000000000000000000000/my_realtime_trunk
+Match: 203.0.113.11/32
+
+Identify:  000000000000000000000000/my_realtime_trunk
+Match: 203.0.113.12/32
+
+Identify:  000000000000000000000000/my_realtime_trunk
+Match: 203.0.113.13/32
+
+
+Objects found: 3
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo check the identify 1`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "Identify:  <Identify/Endpoint...........................................................>
+Match:  <criteria...........................>
+==========================================================================================
+
+Identify:  000000000000000000000000/my_realtime_trunk
+Match: 203.0.113.11/32
+
+
+ParameterName : ParameterValue
+============================================
+endpoint      : my_realtime_trunk
+match         : 203.0.113.11/255.255.255.255
+match_header  :
+srv_lookups   : true
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo remove the identify 1`] = `
+Object {
+  "Message": "Command output follows",
+  "Output": "No objects found.
+",
+  "Response": "Success",
+}
+`;
+
+exports[`ast_mongo write an identify 1`] = `
+Object {
+  "__v": 0,
+  "_id": "000000000000000000000000",
+  "endpoint": "my_realtime_trunk",
+  "match": "203.0.113.11",
+}
+`;
+
+exports[`ast_mongo write two identifies 1`] = `
+Array [
+  Object {
+    "__v": 0,
+    "_id": "000000000000000000000000",
+    "endpoint": "my_realtime_trunk",
+    "match": "203.0.113.12",
+  },
+  Object {
+    "__v": 0,
+    "_id": "000000000000000000000000",
+    "endpoint": "my_realtime_trunk",
+    "match": "203.0.113.13",
+  },
+]
+`;

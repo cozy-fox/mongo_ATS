@@ -1,5 +1,5 @@
 
-## Testing Configuration
+## ~~Testing Configuration~~ (Deprecated)
 
 A testing environment of this test bench is consisted of Docker technorogy and the configuration is as follows;
 
@@ -37,9 +37,9 @@ Network name | Description
 
 Container Name   | Base Image | The related script | comment
 -----------------|------------|--------------------|--------
-`asterisk.local`        | [ubuntu:xenial](https://hub.docker.com/_/ubuntu/) | [./asterisk/asterisk](asterisk/asterisk)
+`asterisk.local`        | [ubuntu:xenial](https://hub.docker.com/_/ubuntu/) | [./asterisk/asterisk](asterisk/asterisk) |
 `ast_mongo[1..3].local` | [mongo](https://hub.docker.com/_/mongo/)          | [./mongodb/mongors](mongodb/mongors) | constructs a replica set '`ast_mongo_set`'.
-`tester.local`          | [node:boron](https://hub.docker.com/_/node/)      | [./tester/tester](tester/tester)
+`tester.local`          | [node:carbon](https://hub.docker.com/_/node/)      | [./tester/tester](tester/tester) |
 
 ## Test Command
 
@@ -150,9 +150,8 @@ You can specify versions of some essential libraries to build to a [`config.json
 Property             |Definition           | Comments
 ---------------------|---------------------|----------
 `mongo_c_driver` |version of the [mongo c driver][3] |
-`pjsip`          |version of the [pjsip][4] | note: use the pjsip bundled with asterisk if you specify '2.5' or later.
+`pjsip`          |version of the [pjsip][4] | specify "bundled" if you want to use the pjsip with `--with-pjproject-bundled`.
 `asterisk`       |version of [Asterisk][1]  |
-`mongodb`        |version of the module| deprecated
 
 ## Requirements
 

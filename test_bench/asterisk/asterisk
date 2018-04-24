@@ -13,7 +13,7 @@ CONFIG_FILE=$5
 #
 IMAGE_NAME=$HOSTNAME
 KEEP_ALIVE_CMD='tail -f /dev/null'
-ARGS=`cat $CONFIG_FILE | awk 'match($0, /[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH) }' | tr '\n' ' '`
+ARGS=`cat $CONFIG_FILE | awk 'match($0, /[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|bundled/) { print substr($0, RSTART, RLENGTH) }' | tr '\n' ' '`
 #
 #   make an image to build and test asterisk
 #
