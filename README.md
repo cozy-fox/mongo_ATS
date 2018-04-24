@@ -1,4 +1,4 @@
-# MongoDB Plugins for Asterisk
+# MongoDB Plugins for Asterisk [![Build Status](https://travis-ci.org/minoruta/ast_mongo.svg?branch=master)](https://travis-ci.org/minoruta/ast_mongo)
 
 The **`ast_mongo`** project provides the following plugins for Asterisk;
 
