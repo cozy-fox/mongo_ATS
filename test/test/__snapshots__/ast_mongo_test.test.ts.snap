@@ -260,6 +260,7 @@ direct_media                       : true
 direct_media_glare_mitigation      : none
 direct_media_method                : invite
 disable_direct_media_on_nat        : false
+dtls_auto_generate_cert            : No
 dtls_ca_file                       :
 dtls_ca_path                       :
 dtls_cert_file                     :
@@ -278,7 +279,7 @@ from_domain                        :
 from_user                          :
 g726_non_standard                  : false
 ice_support                        : false
-identify_by                        : username
+identify_by                        : username,ip
 inband_progress                    : false
 incoming_mwi_mailbox               :
 language                           :

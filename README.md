@@ -142,7 +142,7 @@ Name of DB |Name of Collection |Comment
     - GNU GENERAL PUBLIC LICENSE Version 2
 - Any other resources and files:
     - The MIT License (MIT)
-- Copyright: (C) 2016-17, KINOSHITA minoru, [viktike][9] for cel_mongodb
+- Copyright: (C) 2016-2018, KINOSHITA minoru, [viktike][9] for cel_mongodb
 
 
 [1]: http://asterisk.org/        "Asterisk"
@@ -150,5 +150,4 @@ Name of DB |Name of Collection |Comment
 [3]: https://github.com/mongodb/mongo-c-driver  "mongo_c_driver"
 [4]: http://www.pjsip.org       "PJSIP"
 [5]: https://wiki.asterisk.org/wiki/display/AST/Setting+up+PJSIP+Realtime
-[6]: https://github.com/minoruta/ast_mongo/tree/master/asterisk
 [9]: https://github.com/viktike

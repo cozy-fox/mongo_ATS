@@ -12,8 +12,8 @@ RUN  mkdir ast_mongo
 #COPY ./LICENSE ast_mongo/
 #COPY README.md ast_mongo/
 
-RUN apt update -q \
-&&  apt install -y -q \
+RUN apt -qq update \
+&&  apt -qq install -y \
     libssl-dev \
     libsasl2-dev \
     libncurses5-dev \
@@ -35,8 +35,10 @@ RUN cd $HOME \
 &&  wget -nv "https://github.com/mongodb/mongo-c-driver/releases/download/$VERSION_MONGOC/mongo-c-driver-$VERSION_MONGOC.tar.gz" -O - | tar xzf - \
 &&  cd mongo-c-driver-$VERSION_MONGOC \
 &&  ./configure --disable-automatic-init-and-cleanup > /dev/null \
-&&  make all install \
+&&  make all install > make.log \
+&&  make clean \
 &&  cd $HOME \
+&&  tar czf mongo-c-driver-$VERSION_MONGOC.tgz mongo-c-driver-$VERSION_MONGOC \
 &&  rm -rf mongo-c-driver-$VERSION_MONGOC
 
 RUN cd $HOME \
@@ -65,10 +67,15 @@ RUN cd $HOME \
 &&  ./bootstrap.sh \
 &&  ./configure --disable-xmldoc > /dev/null \
 &&  tar czf $HOME/ast_mongo/asterisk-$VERSION_ASTERISK-config.log.tgz config.log \
-&&  make all \
-&&  make install \
+&&  make all > make.log \
+&&  make install > install.log \
 &&  ldconfig /usr/lib \
-&&  make samples
+&&  make samples > samples.log \
+&&  make clean > clean.log
 
-
-CMD asterisk -c > /dev/null
+#
+# Copy back the updated patches to host & Launch asterisk
+#
+CMD cp /root/ast_mongo/ast_mongo-* /mnt/ast_mongo/patches/ \
+&&  cp /root/ast_mongo/mongodb.for.asterisk.patch /mnt/ast_mongo/src/ \
+&&  asterisk -c > /dev/null
