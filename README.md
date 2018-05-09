@@ -5,7 +5,8 @@ The **`ast_mongo`** project provides the following plugins for Asterisk;
 1. Realtime configuration engine with MongoDB,
 1. CDR backend for MongoDB,
 1. CEL backend for MongoDB (contributed by [viktike][9], thanks [viktike][9]),
-1. and a [test bench](test_bench) with MongoDB replica set based on Docker technology.
+1. ~~and a [test bench](test_bench) with MongoDB replica set based on Docker technology~~(Deprecated).
+1. and a [test bench](test/docker) based on Docker technology.
 
 Plugin name            |Realtime    |CDR|CEL|Source code|Config file(s)
 -----------------------|------------|---|---|-----------|--------------
@@ -135,6 +136,10 @@ Name of DB |Name of Collection |Comment
         pjsip.conf => mongodb,asterisk,ast_config
 
 - See Asterisk's official document [Setting up PJSIP Realtime][5] as well.
+
+## Supporting library
+- [`ast_mongo_ts`](https://github.com/minoruta/ast_mongo_ts) which is nodejs library
+provides functionalities to handle asterisk's object through MongoDB.
 
 ## License and Copyright
 

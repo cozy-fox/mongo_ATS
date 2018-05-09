@@ -1,5 +1,5 @@
 diff --git a/build_tools/menuselect-deps.in b/build_tools/menuselect-deps.in
-index 7bc225b..4add7c6 100644
+index 7502553..e8405b1 100644
 --- a/build_tools/menuselect-deps.in
 +++ b/build_tools/menuselect-deps.in
 @@ -4,6 +4,7 @@ COROSYNC=@PBX_COROSYNC@
@@ -10,8 +10,8 @@ index 7bc225b..4add7c6 100644
  CODEC2=@PBX_CODEC2@
  CURL=@PBX_CURL@
  DAHDI=@PBX_DAHDI@
-@@ -36,6 +37,7 @@ BASH=@PBX_BASH@
- LTDL=@PBX_LTDL@
+@@ -35,6 +36,7 @@ XMLSTARLET=@PBX_XMLSTARLET@
+ BASH=@PBX_BASH@
  LUA=@PBX_LUA@
  MISDN=@PBX_MISDN@
 +MONGOC=@PBX_MONGOC@
@@ -19,10 +19,10 @@ index 7bc225b..4add7c6 100644
  NBS=@PBX_NBS@
  NETSNMP=@PBX_NETSNMP@
 diff --git a/configure.ac b/configure.ac
-index 233a52d..d762404 100644
+index 583a576..88e29a0 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -568,6 +568,8 @@ AST_EXT_LIB_SETUP([TINFO], [Term Info], [tinfo])
+@@ -575,6 +575,8 @@ AST_EXT_LIB_SETUP([TINFO], [Term Info], [tinfo])
  AST_EXT_LIB_SETUP([TONEZONE], [tonezone], [tonezone])
  AST_EXT_LIB_SETUP([UNBOUND], [unbound], [unbound])
  AST_EXT_LIB_SETUP([UNIXODBC], [unixODBC], [unixodbc])
@@ -31,15 +31,15 @@ index 233a52d..d762404 100644
  AST_EXT_LIB_SETUP([VORBIS], [Vorbis], [vorbis])
  AST_EXT_LIB_SETUP([VPB], [Voicetronix API], [vpb])
  AST_EXT_LIB_SETUP([X11], [X11], [x11])
-@@ -2182,6 +2184,10 @@ AST_C_DECLARE_CHECK([UNBOUND_CONST_PARAMS], [UNBOUND_VERSION_MAJOR], [unbound.h]
+@@ -2208,6 +2210,10 @@ AST_C_DECLARE_CHECK([UNBOUND_CONST_PARAMS], [UNBOUND_VERSION_MAJOR], [unbound.h]
  
- AST_EXT_LIB_CHECK([UNIXODBC], [odbc], [SQLConnect], [sql.h], [])
+ AST_EXT_LIB_CHECK([UNIXODBC], [odbc], [SQLConnect], [sql.h])
  
 +AST_EXT_LIB_CHECK([BSON], [bson-1.0], [bson_init], [libbson-1.0/bson.h], [], [-I/usr/local/include/libbson-1.0])
 +
 +AST_EXT_LIB_CHECK([MONGOC], [mongoc-1.0], [mongoc_init], [libmongoc-1.0/mongoc.h], [], [-I/usr/local/include/libbson-1.0 -I/usr/local/include/libmongoc-1.0])
 +
- AST_EXT_LIB_CHECK([OGG], [ogg], [ogg_sync_init], [])
+ AST_EXT_LIB_CHECK([OGG], [ogg], [ogg_stream_init], [ogg/ogg.h])
  
  # Non-glibc platforms require libexecinfo for backtrace support
 diff --git a/makeopts.in b/makeopts.in

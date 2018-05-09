@@ -2,15 +2,17 @@ ARG VERSION_UBUNTU=latest
 FROM ubuntu:$VERSION_UBUNTU
 MAINTAINER KINOSHITA minoru <5021543+minoruta@users.noreply.github.com>
 
-ARG VERSION_ASTERISK=15.1.3
-ARG VERSION_MONGOC=1.8.2
+#
+#   Essential arguments
+#
+ARG VERSION_ASTERISK
+ARG VERSION_MONGOC
+ARG VERSION_LIBSRTP
 
 WORKDIR /root
 RUN  mkdir src
 COPY src/* src/
 RUN  mkdir ast_mongo
-#COPY ./LICENSE ast_mongo/
-#COPY README.md ast_mongo/
 
 RUN apt -qq update \
 &&  apt -qq install -y \
@@ -22,7 +24,6 @@ RUN apt -qq update \
     libsqlite3-dev \
     libjansson-dev \
     libcurl4-openssl-dev \
-    libsrtp0-dev \
     pkg-config \
     build-essential \
     autoconf \
@@ -31,6 +32,24 @@ RUN apt -qq update \
     file \
     git
 
+#
+#   Prepare strp
+#
+WORKDIR /root
+RUN wget https://github.com/cisco/libsrtp/archive/v$VERSION_LIBSRTP.tar.gz \
+&&  tar xzf v$VERSION_LIBSRTP.tar.gz \
+&&  rm v$VERSION_LIBSRTP.tar.gz \
+&&  cd libsrtp-$VERSION_LIBSRTP \
+&&  ./configure > /dev/null \
+&&  make \
+&&  make install \
+&&  make clean \
+&&  ldconfig \
+&&  cd ..
+
+#
+#   Prepare MongoDB C Driver
+#
 RUN cd $HOME \
 &&  wget -nv "https://github.com/mongodb/mongo-c-driver/releases/download/$VERSION_MONGOC/mongo-c-driver-$VERSION_MONGOC.tar.gz" -O - | tar xzf - \
 &&  cd mongo-c-driver-$VERSION_MONGOC \
@@ -41,6 +60,9 @@ RUN cd $HOME \
 &&  tar czf mongo-c-driver-$VERSION_MONGOC.tgz mongo-c-driver-$VERSION_MONGOC \
 &&  rm -rf mongo-c-driver-$VERSION_MONGOC
 
+#
+#   Build and install Asterisk with patches for ast_mongo
+#
 RUN cd $HOME \
 &&  wget -nv "http://downloads.asterisk.org/pub/telephony/asterisk/releases/asterisk-$VERSION_ASTERISK.tar.gz" -O - | tar -zxf - \
 &&  cd asterisk-$VERSION_ASTERISK \
