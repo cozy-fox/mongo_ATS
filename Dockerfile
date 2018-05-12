@@ -87,7 +87,7 @@ RUN cd $HOME \
 &&  git diff build_tools/menuselect-deps.in configure.ac makeopts.in > $HOME/ast_mongo/mongodb.for.asterisk.patch \
 &&  git diff HEAD > $HOME/ast_mongo/ast_mongo-$VERSION_ASTERISK.patch \
 &&  ./bootstrap.sh \
-&&  ./configure --disable-xmldoc > /dev/null \
+&&  ./configure --disable-xmldoc --with-pjproject-bundled > /dev/null \
 &&  tar czf $HOME/ast_mongo/asterisk-$VERSION_ASTERISK-config.log.tgz config.log \
 &&  make all > make.log \
 &&  make install > install.log \
@@ -99,5 +99,4 @@ RUN cd $HOME \
 # Copy back the updated patches to host & Launch asterisk
 #
 CMD cp /root/ast_mongo/ast_mongo-* /mnt/ast_mongo/patches/ \
-&&  cp /root/ast_mongo/mongodb.for.asterisk.patch /mnt/ast_mongo/src/ \
 &&  asterisk -c > /dev/null
