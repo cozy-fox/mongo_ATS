@@ -19,7 +19,7 @@ Plugin name            |Realtime    |CDR|CEL|Source code|Config file(s)
 ## How to get the plugins
 
 The plugins are provided as source code patches to Asterisk.
-See [patches](patches) in detail.
+See [src](src) and [patches](patches) in detail.
 
 ## Test
 See [Test](test/docker).
