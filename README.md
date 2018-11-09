@@ -3,6 +3,7 @@
 The **`ast_mongo`** project provides the following plugins for Asterisk;
 
 1. Realtime configuration engine with MongoDB,
+1. Queue logging for MongoDB (preliminarly),
 1. CDR backend for MongoDB,
 1. CEL backend for MongoDB (contributed by [viktike][9], thanks [viktike][9]),
 1. ~~and a [test bench](test_bench) with MongoDB replica set based on Docker technology~~(Deprecated).
@@ -134,6 +135,9 @@ Name of DB |Name of Collection |Comment
         ; map extensions.conf to ast_config collection of asterisk database
         extensions.conf => mongodb,asterisk,ast_config
         pjsip.conf => mongodb,asterisk,ast_config
+
+        ; For queue logging (preliminarly)
+        ;queue_log => mongodb,queues,queue_log
 
 - See Asterisk's official document [Setting up PJSIP Realtime][5] as well.
 
