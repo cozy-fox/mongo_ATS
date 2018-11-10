@@ -7,13 +7,15 @@ In order to build the `ast_mongo` plugins, you need to build it with Asterisk.
  ```
  $ wget -nv "https://github.com/mongodb/mongo-c-driver/releases/download/$VERSION_MONGOC/mongo-c-driver-$VERSION_MONGOC.tar.gz" -O - | tar xzf -
  $ cd mongo-c-driver-$VERSION_MONGOC
- $ ./configure --disable-automatic-init-and-cleanup
+ $ mkdir cmake-build
+ $ cd cmake-build
+ $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..
  $ make all && sudo make install
  ```
 
 1. Prepare the code of asterisk;
  ```
- $ wget -nv "http://downloads.asterisk.org/pub/telephony/asterisk/releases/asterisk-a.b.c" -O - | tar -zxf -
+ $ wget -nv "http://downloads.asterisk.org/pub/telephony/asterisk/releases/asterisk-a.b.c.tar.gz" -O - | tar -zxf -
  $ cd asterisk-a.b.c
  ```
 1. Copy following files to `dst` of asterisk's source tree respectively;

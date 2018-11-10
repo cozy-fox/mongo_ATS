@@ -4,15 +4,15 @@ services:
     image: mongo
     container_name: ast_mongo
   asterisk:
-    image: ast_mongo-asterisk:15.4.0
+    image: ast_mongo-asterisk:16.0.0
     container_name: asterisk
     build:
       context: ../../
       dockerfile: Dockerfile
       args:
-        VERSION_ASTERISK: 15.4.0
-        VERSION_MONGOC: 1.9.5
-        VERSION_LIBSRTP: 2.1.0        
+        VERSION_ASTERISK: 16.0.0
+        VERSION_MONGOC: 1.13.0
+        VERSION_LIBSRTP: 2.1.0
     volumes:
       - ../volume/etc/asterisk:/etc/asterisk
       - ../volume/var/lib/asterisk/sounds/en:/var/lib/asterisk/sounds/en

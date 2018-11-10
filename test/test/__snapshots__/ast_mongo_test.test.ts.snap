@@ -224,7 +224,7 @@ Channel:  <ChannelId......................................>  <State.....>  <Time
 Exten: <DialedExten...........>  CLCID: <ConnectedLineCID.......>
 ==========================================================================================
 
-Endpoint:  6001                                                 Not in use    0 of inf
+Endpoint:  6001                                                 Unavailable   0 of inf
 InAuth:  6001/6001
 Aor:  6001                                               1
 Contact:  6001/sip:6001@tester:5060                  9d7987fe43 Created       0.000
@@ -294,7 +294,6 @@ message_context                    :
 moh_passthrough                    : false
 moh_suggest                        : default
 mwi_from_user                      :
-mwi_subscribe_replaces_unsolicited : false
 named_call_group                   :
 named_pickup_group                 :
 notify_early_inuse_ringing         : false

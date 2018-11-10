@@ -9,6 +9,8 @@ ARG VERSION_ASTERISK
 ARG VERSION_MONGOC
 ARG VERSION_LIBSRTP
 
+SHELL ["/bin/bash", "-c"]
+
 WORKDIR /root
 RUN  mkdir src
 COPY src/* src/
@@ -24,8 +26,10 @@ RUN apt -qq update \
     libsqlite3-dev \
     libjansson-dev \
     libcurl4-openssl-dev \
+    libedit-dev \
     pkg-config \
     build-essential \
+    cmake \
     autoconf \
     uuid-dev \
     wget \
@@ -53,7 +57,14 @@ RUN wget https://github.com/cisco/libsrtp/archive/v$VERSION_LIBSRTP.tar.gz \
 RUN cd $HOME \
 &&  wget -nv "https://github.com/mongodb/mongo-c-driver/releases/download/$VERSION_MONGOC/mongo-c-driver-$VERSION_MONGOC.tar.gz" -O - | tar xzf - \
 &&  cd mongo-c-driver-$VERSION_MONGOC \
-&&  ./configure --disable-automatic-init-and-cleanup > /dev/null \
+&&  function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; } \
+&&  if version_gt $VERSION_MONGOC "1.10"; then \
+      mkdir cmake-build; \
+      cd cmake-build; \
+      cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..; \
+    else \
+      ./configure --disable-automatic-init-and-cleanup > /dev/null; \
+    fi \
 &&  make all install > make.log \
 &&  make clean \
 &&  cd $HOME \
@@ -87,7 +98,9 @@ RUN cd $HOME \
 &&  git diff build_tools/menuselect-deps.in configure.ac makeopts.in > $HOME/ast_mongo/mongodb.for.asterisk.patch \
 &&  git diff HEAD > $HOME/ast_mongo/ast_mongo-$VERSION_ASTERISK.patch \
 &&  ./bootstrap.sh \
-&&  ./configure --disable-xmldoc --with-pjproject-bundled > /dev/null \
+&&  function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; } \
+&&  if version_gt $VERSION_ASTERISK "16"; then JANSSONBUNDLED="--with-jansson-bundled"; fi \
+&&  ./configure --disable-xmldoc --with-pjproject-bundled $JANSSONBUNDLED > /dev/null \
 &&  tar czf $HOME/ast_mongo/asterisk-$VERSION_ASTERISK-config.log.tgz config.log \
 &&  make all > make.log \
 &&  make install > install.log \
